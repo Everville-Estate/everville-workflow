@@ -13,7 +13,7 @@ Use this skill at the start of any non-trivial change on an Everville project. F
 Create or pick a Beads epic (`bd create --type epic`). One epic = one deliverable outcome the user can see. If the task doesn't map to an existing or new epic, stop and ask.
 
 ### 2. BRAINSTORM — Design before code
-Invoke `superpowers:brainstorming`. Output: a written spec in `docs/superpowers/specs/YYYY-MM-DD-<topic>.md`, committed. Skip only if the change is a re-run of an already-specced pattern.
+Invoke `superpowers:brainstorming`. Before designing anything new, dispatch the `codebase-pattern-finder` agent to surface existing implementations (Next.js routes, Drizzle schemas, shadcn primitives, server actions) you can model after. Output: a written spec in `docs/superpowers/specs/YYYY-MM-DD-<topic>.md`, committed. Skip only if the change is a re-run of an already-specced pattern.
 
 ### 3. PLAN — Break into tasks
 Invoke `superpowers:writing-plans`. Output: a plan in `docs/superpowers/plans/YYYY-MM-DD-<topic>.md` with bite-sized TDD steps. Each task should be 2-5 minutes of work.
@@ -29,7 +29,7 @@ For every production dependency touched by the plan, resolve via `mcp__context7_
 - `related` — soft links
 
 ### 5. ISOLATE — Worktree
-Invoke `superpowers:using-git-worktrees`. Create an isolated worktree per epic. Never modify upstream branches directly.
+Invoke `superpowers:using-git-worktrees`. Create an isolated worktree per epic. Never modify upstream branches directly. Before adding any new file, module, or wrapper during implementation, invoke `everville-reduce-entropy` to check whether an existing utility already covers it.
 
 ### 6. IMPLEMENT — TDD with discipline
 Invoke `superpowers:test-driven-development`. For every unit of logic: write failing test → run to confirm RED → write minimum code → run to confirm GREEN → refactor → commit.
@@ -38,16 +38,16 @@ Invoke `superpowers:test-driven-development`. For every unit of logic: write fai
 If the change touches `app/(marketing)/`, dashboards, or any customer-facing flow: invoke `everville-e2e-discipline:e2e-discipline` (when installed) or write Playwright specs following the project's existing conventions. Run against preview deploy URL, not localhost.
 
 ### 8. REVIEW — Multi-agent quality pass
-Invoke `superpowers:requesting-code-review`. For tier-1 projects (balicopter, aviation/financial), also dispatch `security-auditor` and `deploy-checker` in parallel.
+Run `/review-self` first to check your own diff as a coherent mental model. Then invoke `superpowers:requesting-code-review`. For tier-1 projects (balicopter, aviation/financial), also dispatch `security-auditor` and `deploy-checker` in parallel. If the change introduces a new skill or SKILL.md, invoke `everville-skill-judge` as a gate before merge.
 
 ### 9. VERIFY — Prove it works
 Invoke `superpowers:verification-before-completion`. Run the actual commands (tests, builds, deploy-check) and paste output. Never claim done without verification.
 
 ### 10. FINISH — Integrate
-Invoke `superpowers:finishing-a-development-branch`. Merge path depends on project (PR review, direct merge, squash).
+Invoke `superpowers:finishing-a-development-branch`. For any PR against an Everville repo, run `/explain-pr-changes` to generate or update the PR body from the diff. Merge path depends on project (PR review, direct merge, squash).
 
 ### 11. CLOSE — Record
-`bd close <epic-id> --reason "<one-line outcome>"`. This triggers the memory-bridge hook (when `everville-bootstrap` is installed) which appends the closure to the project's memory file.
+`bd close <epic-id> --reason "<one-line outcome>"`. This triggers the memory-bridge hook (when `everville-bootstrap` is installed) which appends the closure to the project's memory file. If the work exposed a pattern worth propagating across Everville repos (regression caught, gotcha found, surprising constraint), invoke `everville-lesson-learned` and persist the lesson as an auto-memory `feedback_*.md` entry.
 
 ## Required upstream skills
 

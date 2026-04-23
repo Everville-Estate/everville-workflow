@@ -1,7 +1,7 @@
 {
   "name": "everville-workflow",
-  "version": "0.1.1",
-  "description": "Unified 11-step development ritual + trivial-change whitelist. Enforces consistency across Everville team projects.",
+  "version": "0.2.0",
+  "description": "Unified 11-step development ritual, trivial-change whitelist, skill-judge, entropy-reducer, CLAUDE.md refactor, lesson extractor + codebase-pattern-finder agent + /explain-pr-changes and /review-self commands.",
   "author": {
     "name": "Everville Estate PTE LTD",
     "email": "niko@everville.estate",
@@ -10,6 +10,5 @@
   "homepage": "https://github.com/Everville-Estate/everville-workflow",
   "repository": "https://github.com/Everville-Estate/everville-workflow",
   "license": "MIT",
-  "keywords": ["workflow", "discipline", "beads", "everville"],
-  "skills": "./skills/"
+  "keywords": ["workflow", "discipline", "beads", "everville", "skill-judge", "entropy", "lesson-learned"]
 }
