@@ -1,0 +1,14 @@
+{
+  "name": "everville-copy",
+  "version": "0.1.0",
+  "description": "Prose discipline for anything humans will read — Strunk's rules + anti-slop patterns. Merged humanizer and writing-clearly-and-concisely into a single skill tuned for Everville marketing, PR bodies, commit messages, and UI copy.",
+  "author": {
+    "name": "Everville Estate PTE LTD",
+    "email": "niko@everville.estate",
+    "url": "https://github.com/Everville-Estate"
+  },
+  "homepage": "https://github.com/Everville-Estate/everville-workflow",
+  "repository": "https://github.com/Everville-Estate/everville-workflow",
+  "license": "MIT",
+  "keywords": ["writing", "copy", "prose", "humanize", "strunk", "everville"]
+}

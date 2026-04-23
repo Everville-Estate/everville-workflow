@@ -14,6 +14,33 @@
       "author": {
         "name": "Everville Estate PTE LTD"
       }
+    },
+    {
+      "name": "everville-meta",
+      "source": "./plugins/everville-meta",
+      "description": "Meta-tooling for the everville-workflow marketplace itself: scaffold plugins, bump versions, audit manifests",
+      "version": "0.1.0",
+      "author": {
+        "name": "Everville Estate PTE LTD"
+      }
+    },
+    {
+      "name": "everville-copy",
+      "source": "./plugins/everville-copy",
+      "description": "Prose discipline for anything humans will read — Strunk's rules + anti-slop patterns tuned for Everville brands",
+      "version": "0.1.0",
+      "author": {
+        "name": "Everville Estate PTE LTD"
+      }
+    },
+    {
+      "name": "everville-handoff",
+      "source": "./plugins/everville-handoff",
+      "description": "Session handoff documents for long-running Everville agent work — create, resume, staleness-check",
+      "version": "0.1.0",
+      "author": {
+        "name": "Everville Estate PTE LTD"
+      }
     }
   ]
 }

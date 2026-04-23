@@ -1,0 +1,14 @@
+{
+  "name": "everville-meta",
+  "version": "0.1.0",
+  "description": "Meta-tooling for the everville-workflow marketplace itself — scaffold new plugins, bump versions, and understand manifest schemas without leaving the repo.",
+  "author": {
+    "name": "Everville Estate PTE LTD",
+    "email": "niko@everville.estate",
+    "url": "https://github.com/Everville-Estate"
+  },
+  "homepage": "https://github.com/Everville-Estate/everville-workflow",
+  "repository": "https://github.com/Everville-Estate/everville-workflow",
+  "license": "MIT",
+  "keywords": ["plugin", "marketplace", "meta", "everville", "scaffolding"]
+}
