@@ -1,6 +1,6 @@
 {
   "name": "everville-workflow",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Unified 11-step development ritual + trivial-change whitelist. Enforces consistency across Everville team projects.",
   "author": {
     "name": "Everville Estate PTE LTD",

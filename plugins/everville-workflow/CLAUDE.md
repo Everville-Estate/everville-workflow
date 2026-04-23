@@ -19,6 +19,7 @@ claude plugin install superpowers@superpowers-marketplace
 ## Plugin versioning
 
 - 0.1.0 — Initial release: unified-workflow + trivial-whitelist skills (Phase 0)
+- 0.1.1 — Doc fix: remove invalid `github:` prefix from marketplace add commands
 - 0.2.0 — Planned: `/workflow-status` command (Plan 2)
 
 ## Maintainers

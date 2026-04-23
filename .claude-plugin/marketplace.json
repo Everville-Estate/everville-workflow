@@ -10,7 +10,7 @@
       "name": "everville-workflow",
       "source": "./plugins/everville-workflow",
       "description": "Unified development ritual and trivial-change whitelist for Everville team projects",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "author": {
         "name": "Everville Estate PTE LTD"
       }
