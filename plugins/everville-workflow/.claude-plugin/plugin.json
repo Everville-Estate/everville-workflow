@@ -1,0 +1,15 @@
+{
+  "name": "everville-workflow",
+  "version": "0.1.0",
+  "description": "Unified 11-step development ritual + trivial-change whitelist. Enforces consistency across Everville team projects.",
+  "author": {
+    "name": "Everville Estate PTE LTD",
+    "email": "niko@everville.estate",
+    "url": "https://github.com/Everville-Estate"
+  },
+  "homepage": "https://github.com/Everville-Estate/everville-workflow",
+  "repository": "https://github.com/Everville-Estate/everville-workflow",
+  "license": "MIT",
+  "keywords": ["workflow", "discipline", "beads", "everville"],
+  "skills": "./skills/"
+}

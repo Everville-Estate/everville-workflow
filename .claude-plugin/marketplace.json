@@ -1,0 +1,19 @@
+{
+  "name": "everville-workflow",
+  "owner": {
+    "name": "Everville Estate PTE LTD",
+    "email": "niko@everville.estate",
+    "url": "https://everville.estate"
+  },
+  "plugins": [
+    {
+      "name": "everville-workflow",
+      "source": "./plugins/everville-workflow",
+      "description": "Unified development ritual and trivial-change whitelist for Everville team projects",
+      "version": "0.1.0",
+      "author": {
+        "name": "Everville Estate PTE LTD"
+      }
+    }
+  ]
+}
