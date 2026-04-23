@@ -1,0 +1,17 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+
+# Local Claude state (not distributed via plugin)
+.claude/settings.local.json
+
+# Node (for future tooling only)
+node_modules/
+
+# Temp
+*.tmp
+*.log
