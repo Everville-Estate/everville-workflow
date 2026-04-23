@@ -172,7 +172,7 @@ everville-workflow/                         ← marketplace root
 **Install for any team member**:
 
 ```bash
-claude plugin marketplace add github:Everville-Estate/everville-workflow
+claude plugin marketplace add Everville-Estate/everville-workflow
 claude plugin install everville-stack@everville-workflow   # full bundle
 # or à la carte:
 claude plugin install everville-workflow@everville-workflow

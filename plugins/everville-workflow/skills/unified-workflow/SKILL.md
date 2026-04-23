@@ -62,7 +62,7 @@ This workflow assumes you have the following skills installed (via `superpowers`
 
 Install with:
 ```bash
-claude plugin marketplace add github:obra/superpowers-marketplace
+claude plugin marketplace add obra/superpowers-marketplace
 claude plugin install superpowers@superpowers-marketplace
 ```
 

@@ -12,7 +12,7 @@ When this plugin is enabled, Claude Code must consult the `unified-workflow` ski
 This plugin's `unified-workflow` skill references several `superpowers:*` skills. Users must install `superpowers` separately:
 
 ```bash
-claude plugin marketplace add github:obra/superpowers-marketplace
+claude plugin marketplace add obra/superpowers-marketplace
 claude plugin install superpowers@superpowers-marketplace
 ```
 

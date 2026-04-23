@@ -12,7 +12,7 @@ More plugins (`everville-bootstrap`, `everville-e2e-discipline`, `everville-stac
 
 ```bash
 # Add this marketplace
-claude plugin marketplace add github:Everville-Estate/everville-workflow
+claude plugin marketplace add Everville-Estate/everville-workflow
 
 # Install the workflow plugin
 claude plugin install everville-workflow@everville-workflow
@@ -30,7 +30,7 @@ claude plugin list
 These plugins assume you have `superpowers` installed. Install separately:
 
 ```bash
-claude plugin marketplace add github:obra/superpowers-marketplace
+claude plugin marketplace add obra/superpowers-marketplace
 claude plugin install superpowers@superpowers-marketplace
 ```
 
