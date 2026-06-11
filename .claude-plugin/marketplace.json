@@ -10,7 +10,7 @@
       "name": "everville-workflow",
       "source": "./plugins/everville-workflow",
       "description": "Unified development ritual, trivial-change whitelist, skill-judge, entropy-reducer, CLAUDE.md refactor, lesson extractor + codebase-pattern-finder agent + /explain-pr-changes and /review-self commands",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "author": {
         "name": "Everville Estate PTE LTD"
       }

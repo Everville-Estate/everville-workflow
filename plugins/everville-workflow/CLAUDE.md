@@ -34,6 +34,7 @@ claude plugin install superpowers@superpowers-marketplace
 - 0.1.0 — Initial release: unified-workflow + trivial-whitelist skills (Phase 0)
 - 0.1.1 — Doc fix: remove invalid `github:` prefix from marketplace add commands
 - 0.2.0 — Adopted 7 items from softaworks/agent-toolkit (MIT): everville-skill-judge (with 9th dimension "Everville Fit"), everville-reduce-entropy, everville-agent-md-refactor, everville-lesson-learned, codebase-pattern-finder agent, /explain-pr-changes, /review-self. Attribution in `LICENSES/softaworks-MIT.txt`.
+- 0.3.0 — Claude Fable 5 tuning per Anthropic's prompting guide: milestone-level plans replace 2-5-minute micro-tasks, brainstorm gated on genuine ambiguity, TDD invariant kept but per-line choreography dropped, REVIEW step now leads with a fresh-context verifier subagent (parallel reviewers by default, /review-self demoted to optional pre-pass), VERIFY adds evidence-grounded progress claims, "err on the side of asking" inverted to pause-only-when-user-input-is-genuinely-required (also in trivial-whitelist edge cases), stale /mental-model usage examples fixed.
 
 ## Maintainers
 
