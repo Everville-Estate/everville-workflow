@@ -146,17 +146,15 @@ Commands can namespace via subdirectory:
 
 ## Git Hygiene
 
-Use the Everville commit format (see root `CLAUDE.md`):
+Use the standard Claude Code commit trailer:
 
 ```
 <conventional commit message>
 
-Generated with [Claude Code](https://claude.ai/code)
-via [Happy](https://happy.engineering)
-
 Co-Authored-By: Claude <noreply@anthropic.com>
-Co-Authored-By: Happy <yesreply@happy.engineering>
 ```
+
+(The model in use sets its own co-author name, e.g. `Claude Fable 5 <noreply@anthropic.com>`. The old Happy-engineering trailer block is retired.)
 
 ## Reference Docs
 
