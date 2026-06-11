@@ -13,10 +13,10 @@ Use this skill at the start of any non-trivial change on an Everville project. F
 Create or pick a Beads epic (`bd create --type epic`). One epic = one deliverable outcome the user can see. If the task doesn't map to an existing or new epic, stop and ask.
 
 ### 2. BRAINSTORM — Design before code
-Invoke `superpowers:brainstorming`. Before designing anything new, dispatch the `codebase-pattern-finder` agent to surface existing implementations (Next.js routes, Drizzle schemas, shadcn primitives, server actions) you can model after. Output: a written spec in `docs/superpowers/specs/YYYY-MM-DD-<topic>.md`, committed. Skip only if the change is a re-run of an already-specced pattern.
+Dispatch the `codebase-pattern-finder` agent to surface existing implementations (Next.js routes, Drizzle schemas, shadcn primitives, server actions) you can model after. If the requirements are genuinely ambiguous — multiple defensible designs, unclear user intent, new domain — invoke `superpowers:brainstorming` and commit a written spec to `docs/superpowers/specs/YYYY-MM-DD-<topic>.md`. If the design is already clear from the request plus existing patterns, write the spec directly and move on; when you have enough information to act, act.
 
-### 3. PLAN — Break into tasks
-Invoke `superpowers:writing-plans`. Output: a plan in `docs/superpowers/plans/YYYY-MM-DD-<topic>.md` with bite-sized TDD steps. Each task should be 2-5 minutes of work.
+### 3. PLAN — Break into milestones
+Invoke `superpowers:writing-plans`. Output: a plan in `docs/superpowers/plans/YYYY-MM-DD-<topic>.md`. Plan at the level of independently verifiable milestones (a migration that applies cleanly, an endpoint with passing tests, a page that renders), not micro-tasks — each milestone should have a stated check that proves it done.
 
 ### 3.5. CONTEXT7 PREFETCH — Pin live docs
 For every production dependency touched by the plan, resolve via `mcp__context7__resolve-library-id` and persist the library ID to `.beads/context7-libs.json`. Never ship code against library assumptions from memory — always query fresh docs.
@@ -32,16 +32,16 @@ For every production dependency touched by the plan, resolve via `mcp__context7_
 Invoke `superpowers:using-git-worktrees`. Create an isolated worktree per epic. Never modify upstream branches directly. Before adding any new file, module, or wrapper during implementation, invoke `everville-reduce-entropy` to check whether an existing utility already covers it.
 
 ### 6. IMPLEMENT — TDD with discipline
-Invoke `superpowers:test-driven-development`. For every unit of logic: write failing test → run to confirm RED → write minimum code → run to confirm GREEN → refactor → commit.
+Invoke `superpowers:test-driven-development`. Tests for a behavior exist and fail before the implementation makes them pass — that invariant is non-negotiable; the per-line choreography is not. Work at whatever unit size keeps the tests honest, and commit at each green milestone. Don't add features, abstractions, or error handling beyond what the task requires; only validate at system boundaries.
 
 ### 7. E2E — User-visible regression gate
 If the change touches `app/(marketing)/`, dashboards, or any customer-facing flow: invoke `everville-e2e-discipline:e2e-discipline` (when installed) or write Playwright specs following the project's existing conventions. Run against preview deploy URL, not localhost.
 
-### 8. REVIEW — Multi-agent quality pass
-Run `/review-self` first to check your own diff as a coherent mental model. Then invoke `superpowers:requesting-code-review`. For tier-1 projects (balicopter, aviation/financial), also dispatch `security-auditor` and `deploy-checker` in parallel. If the change introduces a new skill or SKILL.md, invoke `everville-skill-judge` as a gate before merge.
+### 8. REVIEW — Fresh-context verification
+Dispatch a fresh-context verifier subagent that reads the spec and the diff cold and reports whether the diff satisfies the spec — separate verifiers outperform self-critique, so this is the primary gate. Dispatch reviewers in parallel and keep working while they run: `superpowers:requesting-code-review` for all tiers; `security-auditor` and `deploy-checker` additionally for tier-1 projects (balicopter, aviation/financial). `/review-self` remains available as an optional pre-pass for organizing a large diff before review. If the change introduces a new skill or SKILL.md, invoke `everville-skill-judge` as a gate before merge.
 
 ### 9. VERIFY — Prove it works
-Invoke `superpowers:verification-before-completion`. Run the actual commands (tests, builds, deploy-check) and paste output. Never claim done without verification.
+Invoke `superpowers:verification-before-completion`. Run the actual commands (tests, builds, deploy-check). Before reporting progress, audit each claim against a tool result from this session — only report work you can point to evidence for; if something is not yet verified, say so explicitly. If tests fail, say so with the output; if a step was skipped, say that.
 
 ### 10. FINISH — Integrate
 Invoke `superpowers:finishing-a-development-branch`. For any PR against an Everville repo, run `/explain-pr-changes` to generate or update the PR body from the diff. Merge path depends on project (PR review, direct merge, squash).
@@ -80,4 +80,4 @@ Projects declare tier in their `./CLAUDE.md` (set by `/bootstrap-project` when `
 
 ## Hard rule
 
-If you catch yourself skipping steps to ship faster, stop and ask. The ritual exists because shortcuts have burned the team before. Err on the side of asking.
+Don't silently skip steps to ship faster — the ritual exists because shortcuts have burned the team before. But pause for the user only when the work genuinely requires them: a destructive or irreversible action, a real scope change, or input that only they can provide. Everything else, decide and proceed; if you deviated from a step, say so and why in the PR body rather than stopping to ask permission.

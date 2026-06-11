@@ -26,21 +26,21 @@ Self-review your own diff before asking anyone else to review it. Break large di
 
 ```bash
 # Current working changes (staged + unstaged)
-/mental-model
+/review-self
 
 # Specific commit
-/mental-model abc1234
-/mental-model HEAD~3
+/review-self abc1234
+/review-self HEAD~3
 
 # Branch comparison (vs main)
-/mental-model feature/my-branch
+/review-self feature/my-branch
 
 # Explicit range
-/mental-model main..HEAD
-/mental-model origin/main...HEAD
+/review-self main..HEAD
+/review-self origin/main...HEAD
 
 # Custom - user will provide diff/changes in next message
-/mental-model custom
+/review-self custom
 ```
 
 ## Implementation Steps

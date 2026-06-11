@@ -43,13 +43,14 @@ User: "tweak the hero headline on the homepage"
 AI: [consults trivial-whitelist] → not on list (UI change) → full ritual: epic, brainstorm, plan, ...
 ```
 
-## Edge cases — ask the user
+## Edge cases — default to the ritual
 
-If any of these apply, stop and ask — do not auto-decide:
+If any of these apply, treat the change as non-trivial and run the full ritual — don't stop to ask, and don't talk yourself into the trivial path:
 - Change is mostly formatting but includes one logic line
 - Doc edit in `CLAUDE.md` or `knowledge/decisions/`
 - Dependency bump crosses major version
-- Project-specific `trivial_whitelist_extra` list applies (set in `./CLAUDE.md`)
+
+If a project-specific `trivial_whitelist_extra` list (set in `./CLAUDE.md`) covers the change, the trivial path applies. Ask the user only when the verdict turns on information you don't have (e.g. whether a changelog entry is actually breaking for this codebase).
 
 ## Per-project extensions
 
