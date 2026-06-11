@@ -83,15 +83,15 @@ Avoiding slop is only half the job. Sterile, voiceless prose is just as obvious.
 - Acknowledge complexity: "this is impressive but also unsettling" beats "this is impressive".
 - Be specific about feelings: not "concerning" but "unsettling to watch agents churn at 3am while nobody's watching".
 
-## Limited Context Strategy
+## Subagent Copyedit Pass
 
-When context is tight, dispatch a subagent:
+For high-stakes surfaces (investor updates, marketing pages), a fresh-context editor catches what the author can't:
 
 1. Write your draft using judgment
 2. Dispatch a subagent with the draft + the one relevant reference file
 3. Have the subagent copyedit and return the revision
 
-A single section loads ~1,000-4,500 tokens instead of everything.
+A single reference section loads ~1,000-4,500 tokens instead of everything.
 
 ## Everville-specific gotchas
 

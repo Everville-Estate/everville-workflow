@@ -1,6 +1,6 @@
 ---
 name: everville-handoff
-description: "Create comprehensive handoff documents for seamless agent session transfers. Triggered when: (1) user requests handoff/memory/context save, (2) context window approaches capacity, (3) major task milestone completed, (4) work session ending, (5) user says 'save state', 'create handoff', 'I need to pause', 'context is getting full', (6) resuming with 'load handoff', 'resume from', 'continue where we left off'. Proactively suggest a handoff after substantial work (5+ file edits, complex debugging, architecture decisions). Everville-specific: stores handoffs under .claude/handoffs/ in the repo being worked on so future agents in any Everville project can resume."
+description: "Create comprehensive handoff documents for seamless agent session transfers. Triggered when: (1) user requests handoff/memory/context save, (2) major task milestone completed, (3) work session ending, (4) user says 'save state', 'create handoff', 'I need to pause', (5) resuming with 'load handoff', 'resume from', 'continue where we left off'. NOT a remedy for a long context — the harness manages context; do not stop work or suggest a handoff on account of context size. Everville-specific: stores handoffs under .claude/handoffs/ in the repo being worked on so future agents in any Everville project can resume."
 ---
 
 <!--
@@ -15,13 +15,13 @@ description: "Create comprehensive handoff documents for seamless agent session 
 
 # Everville Handoff
 
-Creates handoff documents that let a fresh agent continue work with zero ambiguity. Solves long-running agent context exhaustion.
+Creates handoff documents that let a fresh agent continue work with zero ambiguity — across machines, across agents (Claude Code ↔ Hermes ↔ Codex), or across a deliberate pause. Not a context-size remedy: the harness manages its own context, so never interrupt or wrap up work because the conversation feels long.
 
 ## Mode Selection
 
-- **Creating a handoff** — user wants to save state, pause work, or context is getting full. Follow **CREATE**.
+- **Creating a handoff** — user wants to save state or pause work. Follow **CREATE**.
 - **Resuming from a handoff** — user wants to continue previous work or mentions an existing handoff. Follow **RESUME**.
-- **Proactive suggestion** — after 5+ file edits, complex debugging, or major architectural decisions, suggest: *"Want me to create a handoff document to preserve this context for the next session?"*
+- **At a natural end** — when a session is clearly wrapping up after substantial work (major milestone, complex debugging resolved, architectural decisions made), create the handoff and report its path as part of your closing summary. Don't interrupt active work to ask "Want me to create a handoff?".
 
 ## CREATE Workflow
 

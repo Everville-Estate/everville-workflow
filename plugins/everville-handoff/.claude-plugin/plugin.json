@@ -1,6 +1,6 @@
 {
   "name": "everville-handoff",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Session handoff documents for long-running Everville agent work. Create comprehensive handoffs when context fills, resume from them with staleness checks. Python scripts replaced with native bash + gh + git.",
   "author": {
     "name": "Everville Estate PTE LTD",
@@ -10,5 +10,11 @@
   "homepage": "https://github.com/Everville-Estate/everville-workflow",
   "repository": "https://github.com/Everville-Estate/everville-workflow",
   "license": "MIT",
-  "keywords": ["handoff", "session", "context", "resume", "everville"]
+  "keywords": [
+    "handoff",
+    "session",
+    "context",
+    "resume",
+    "everville"
+  ]
 }
