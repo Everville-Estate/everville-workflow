@@ -80,4 +80,4 @@ Projects declare tier in their `./CLAUDE.md` (set by `/bootstrap-project` when `
 
 ## Hard rule
 
-Don't silently skip steps to ship faster — the ritual exists because shortcuts have burned the team before. But pause for the user only when the work genuinely requires them: a destructive or irreversible action, a real scope change, or input that only they can provide. Everything else, decide and proceed; if you deviated from a step, say so and why in the PR body rather than stopping to ask permission.
+Don't silently skip steps to ship faster — the ritual exists because shortcuts have burned the team before. But don't over-correct into asking permission for everything either: pause for the user when the work genuinely requires it — a destructive or irreversible action, a real scope change, or input only they can provide — and otherwise use your judgment and proceed, noting any deviation from a step in the PR body.
