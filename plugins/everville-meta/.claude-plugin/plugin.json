@@ -1,6 +1,6 @@
 {
   "name": "everville-meta",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Meta-tooling for the everville-workflow marketplace itself \u2014 scaffold new plugins, bump versions, and understand manifest schemas without leaving the repo.",
   "author": {
     "name": "Everville Estate PTE LTD",
