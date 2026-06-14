@@ -1,7 +1,7 @@
 {
   "name": "everville-workflow",
-  "version": "0.5.0",
-  "description": "Unified 11-step development ritual, trivial-change whitelist, skill-judge, entropy-reducer, CLAUDE.md refactor, lesson extractor + codebase-pattern-finder agent + /explain-pr-changes and /review-self commands.",
+  "version": "0.6.0",
+  "description": "Unified 11-step development ritual, trivial-change whitelist, skill-judge, entropy-reducer, CLAUDE.md refactor, lesson extractor + production-audit + codebase-pattern-finder agent + /explain-pr-changes and /review-self commands.",
   "author": {
     "name": "Everville Estate PTE LTD",
     "email": "niko@everville.estate",

@@ -10,6 +10,7 @@ When this plugin is enabled, Claude Code must consult the `unified-workflow` ski
 - `everville-reduce-entropy` — bias toward deletion; invoked during ISOLATE step
 - `everville-agent-md-refactor` — split bloated repo CLAUDE.md files via progressive disclosure
 - `everville-lesson-learned` — extract SE lessons from diffs; optional auto-memory feedback persistence
+- `everville-production-audit` — pre-deploy ship/block readiness gate on the release surface (RLS, migration rollback, idempotency, env fail-fast); invoked at the verify→finish boundary
 
 ## Agents in this plugin
 
@@ -38,6 +39,7 @@ claude plugin install superpowers@superpowers-marketplace
 - 0.3.0 — Workflow de-prescription pass (derived from current Anthropic prompting guidance): milestone-level plans replace 2-5-minute micro-tasks, brainstorm gated on genuine ambiguity, TDD invariant kept but per-line choreography dropped, REVIEW step now leads with a fresh-context verifier subagent (parallel reviewers by default, /review-self demoted to optional pre-pass), VERIFY adds evidence-grounded progress claims, "err on the side of asking" relaxed to pause-only-when-user-input-is-genuinely-required (also in trivial-whitelist edge cases), stale /mental-model usage examples fixed.
 - 0.4.0 — Model-agnostic recalibration: the 0.3.0 guidance is sound on any current model, but two items were calibrated to one model's failure modes and are now balanced both ways — handoff triggers restore context-checkpointing without encouraging premature wrap-up, and the unified-workflow hard rule warns against both skipping steps and over-asking. Stripped model-name branding from the changelog and plugin-forge commit-trailer example.
 - 0.5.0 — REVIEW upgrade (mined from top community skills — AutoGPT, NousResearch): a 4-tier severity taxonomy (🔴 Blocker / 🟠 Should-fix / 🟡 Nice-to-have / 🔵 Nit) is now the required vocabulary for the REVIEW step's findings; new `/review-post` command lands those findings on the GitHub PR as one atomic, de-duped review with an APPROVE/REQUEST_CHANGES/COMMENT verdict; `/explain-pr-changes` now grades any existing PR body against Why/What/How instead of blindly overwriting it.
+- 0.6.0 — New `everville-production-audit` skill (adapted from affaan-m/ECC production-audit): a release-surface ship/block gate added as step 9.5 (verify→finish). Local-evidence-only audit of RLS/authz, migration reversibility, webhook/job idempotency, env fail-fast, and secrets, with hard score-caps (BLOCK at 69 for missing RLS / non-idempotent webhook / irreversible migration / leakable secret) and mandatory Evidence-checked / Evidence-missing output. Tuned to the Everville stack (Supabase/Drizzle/Vercel/Next) and house hard rules.
 
 ## Maintainers
 
