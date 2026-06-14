@@ -51,6 +51,9 @@ The gate passes when zero 🔴 and no un-triaged 🟠 remain. To land these find
 ### 9. VERIFY — Prove it works
 Invoke `superpowers:verification-before-completion`. Run the actual commands (tests, builds, deploy-check). Before reporting progress, audit each claim against a tool result from this session — only report work you can point to evidence for; if something is not yet verified, say so explicitly. If tests fail, say so with the output; if a step was skipped, say that.
 
+### 9.5. PRODUCTION AUDIT — Release-surface gate
+If this change will deploy to production, invoke `everville-production-audit` before finishing. VERIFY proves the diff works; this proves the *release surface* is safe (RLS, migration rollback, webhook/job idempotency, env fail-fast, secrets). Tier-1 (balicopter/financial/investor-facing): always. Tier-2: when the change touches a prod surface (migrations, webhooks, auth, env). A BLOCK verdict stops the merge; SHIP-WITH-RISK requires the named risk to be accepted by the user with an owner.
+
 ### 10. FINISH — Integrate
 Invoke `superpowers:finishing-a-development-branch`. For any PR against an Everville repo, run `/explain-pr-changes` to generate or update the PR body from the diff. Merge path depends on project (PR review, direct merge, squash).
 
