@@ -40,6 +40,14 @@ If the change touches `app/(marketing)/`, dashboards, or any customer-facing flo
 ### 8. REVIEW — Fresh-context verification
 Dispatch a fresh-context verifier subagent that reads the spec and the diff cold and reports whether the diff satisfies the spec — separate verifiers outperform self-critique, so this is the primary gate. Dispatch reviewers in parallel and keep working while they run: `superpowers:requesting-code-review` for all tiers; `security-auditor` and `deploy-checker` additionally for tier-1 projects (balicopter, aviation/financial). `/review-self` remains available as an optional pre-pass for organizing a large diff before review. If the change introduces a new skill or SKILL.md, invoke `everville-skill-judge` as a gate before merge.
 
+Every finding — from the verifier or any reviewer — carries one severity label so triage is consistent:
+- 🔴 **Blocker** — must fix before merge (correctness, security, data loss, breaks the spec)
+- 🟠 **Should-fix** — fix before merge unless explicitly deferred (clear bug, missing test on a critical path)
+- 🟡 **Nice-to-have** — worth doing, non-blocking (clarity, minor edge case)
+- 🔵 **Nit** — taste or style, optional
+
+The gate passes when zero 🔴 and no un-triaged 🟠 remain. To land these findings on the GitHub PR as one formal review (atomic, de-duped against existing comments), run `/review-post`.
+
 ### 9. VERIFY — Prove it works
 Invoke `superpowers:verification-before-completion`. Run the actual commands (tests, builds, deploy-check). Before reporting progress, audit each claim against a tool result from this session — only report work you can point to evidence for; if something is not yet verified, say so explicitly. If tests fail, say so with the output; if a step was skipped, say that.
 

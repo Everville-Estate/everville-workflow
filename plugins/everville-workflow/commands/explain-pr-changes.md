@@ -7,8 +7,9 @@ argument-hint: "[issue-number-to-close]"
   Adapted from softaworks/agent-toolkit (explain-pr-changes) — MIT licensed.
   See LICENSES/softaworks-MIT.txt for the original license text.
   Everville modifications: removed "Code-Sage" persona framing; kept process
-  structure, mermaid diagram guidance, and triage rules; output follows
-  Everville PR conventions (Happy + Claude Co-Authored-By, `Close $ARGUMENTS`).
+  structure, mermaid diagram guidance, and triage rules; added Why/What/How
+  grading of any existing body; output follows Everville PR conventions
+  (Claude Co-Authored-By, `Close $ARGUMENTS`).
 -->
 
 # /explain-pr-changes
@@ -32,6 +33,16 @@ dedicated new one.
 ## 3. The Process: A Step-by-Step Guide
 
 To generate the final output, you must follow these steps in order:
+
+### Step 0: Grade any existing body
+
+If a PR is already open, read its current body and grade it against the **Why / What / How** test before you regenerate anything:
+
+- **Why** — does it state the problem or goal the change serves?
+- **What** — does it summarize what actually changed?
+- **How** — does it explain the approach or any non-obvious decisions?
+
+If the existing body already covers all three well, make minimal edits rather than overwriting it — respect work a human or prior agent put in. If one or more is missing or thin, fill those gaps. Only regenerate from scratch when there's no usable body. Note which of the three were missing in your report to the user.
 
 ### Step 1: Holistic Analysis
 
