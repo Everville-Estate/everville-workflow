@@ -11,6 +11,7 @@ When this plugin is enabled, Claude Code must consult the `unified-workflow` ski
 - `everville-agent-md-refactor` — split bloated repo CLAUDE.md files via progressive disclosure
 - `everville-lesson-learned` — extract SE lessons from diffs; optional auto-memory feedback persistence
 - `everville-production-audit` — pre-deploy ship/block readiness gate on the release surface (RLS, migration rollback, idempotency, env fail-fast); invoked at the verify→finish boundary
+- `everville-skill-stocktake` — audit the standing skill set for rot/overlap/drift (Keep/Improve/Update/Retire/Merge); orchestrates `everville-skill-judge` per skill, adds cross-skill overlap detection
 
 ## Agents in this plugin
 
@@ -40,6 +41,7 @@ claude plugin install superpowers@superpowers-marketplace
 - 0.4.0 — Model-agnostic recalibration: the 0.3.0 guidance is sound on any current model, but two items were calibrated to one model's failure modes and are now balanced both ways — handoff triggers restore context-checkpointing without encouraging premature wrap-up, and the unified-workflow hard rule warns against both skipping steps and over-asking. Stripped model-name branding from the changelog and plugin-forge commit-trailer example.
 - 0.5.0 — REVIEW upgrade (mined from top community skills — AutoGPT, NousResearch): a 4-tier severity taxonomy (🔴 Blocker / 🟠 Should-fix / 🟡 Nice-to-have / 🔵 Nit) is now the required vocabulary for the REVIEW step's findings; new `/review-post` command lands those findings on the GitHub PR as one atomic, de-duped review with an APPROVE/REQUEST_CHANGES/COMMENT verdict; `/explain-pr-changes` now grades any existing PR body against Why/What/How instead of blindly overwriting it.
 - 0.6.0 — New `everville-production-audit` skill (adapted from affaan-m/ECC production-audit): a release-surface ship/block gate added as step 9.5 (verify→finish). Local-evidence-only audit of RLS/authz, migration reversibility, webhook/job idempotency, env fail-fast, and secrets, with hard score-caps (BLOCK at 69 for missing RLS / non-idempotent webhook / irreversible migration / leakable secret) and mandatory Evidence-checked / Evidence-missing output. Tuned to the Everville stack (Supabase/Drizzle/Vercel/Next) and house hard rules.
+- 0.7.0 — New `everville-skill-stocktake` skill (adapted from affaan-m/ECC skill-stocktake): periodic marketplace rot/overlap/drift audit that orchestrates `everville-skill-judge` per skill and adds cross-skill overlap clustering; Keep/Improve/Update/Retire/Merge verdicts with a decision-enabling reason rule (name the defect + the replacement, ban "superseded"); read-only, defers deletion to user sign-off + `everville-reduce-entropy`. Plus a `parallel-agent-locking` reference under unified-workflow (heartbeat lock contract from AutoGPT pr-test) wired into the ISOLATE step to address the shared-worktree collision burn.
 
 ## Maintainers
 

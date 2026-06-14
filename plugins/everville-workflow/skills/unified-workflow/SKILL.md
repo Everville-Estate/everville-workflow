@@ -29,7 +29,7 @@ For every production dependency touched by the plan, resolve via `mcp__context7_
 - `related` — soft links
 
 ### 5. ISOLATE — Worktree
-Invoke `superpowers:using-git-worktrees`. Create an isolated worktree per epic. Never modify upstream branches directly. Before adding any new file, module, or wrapper during implementation, invoke `everville-reduce-entropy` to check whether an existing utility already covers it.
+Invoke `superpowers:using-git-worktrees`. Create an isolated worktree per epic. Never modify upstream branches directly. Before adding any new file, module, or wrapper during implementation, invoke `everville-reduce-entropy` to check whether an existing utility already covers it. If you dispatch parallel build agents, give each its own worktree — sharing one checkout collides on `HEAD` (a known team burn). When agents genuinely must share a resource, serialize with the lock protocol in `references/parallel-agent-locking.md`.
 
 ### 6. IMPLEMENT — TDD with discipline
 Invoke `superpowers:test-driven-development`. Tests for a behavior exist and fail before the implementation makes them pass — that invariant is non-negotiable; the per-line choreography is not. Work at whatever unit size keeps the tests honest, and commit at each green milestone. Don't add features, abstractions, or error handling beyond what the task requires; only validate at system boundaries.
