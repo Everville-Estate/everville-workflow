@@ -1,6 +1,6 @@
 ---
 name: everville-plugin-forge
-description: Create and manage Claude Code plugins in the everville-workflow marketplace. Use when scaffolding a new plugin, adding components (commands, skills, agents, hooks) to an existing plugin, bumping plugin versions, or auditing plugin.json / marketplace.json manifests before release.
+description: Create and manage Claude Code plugins in the everville-workflow marketplace. Use when scaffolding a new plugin, adding components (commands, skills, agents, hooks) to an existing plugin, bumping plugin versions, scouting whether a skill already exists before creating one, or auditing/linting plugin.json / marketplace.json / SKILL.md frontmatter before release.
 ---
 
 <!--
@@ -44,6 +44,19 @@ everville-workflow/
 ```
 
 ## Workflows
+
+### 0. Scout before you create
+
+The cheapest skill is the one you don't write. Before scaffolding anything, check whether the need is already met:
+
+```bash
+# Local marketplace + installed skills
+grep -rl -i "<the capability>" plugins/*/skills ~/.claude/skills 2>/dev/null
+```
+
+Also check the team's other surfaces (the `everville-core` KB, sibling marketplaces) and, for a genuinely new capability, public skill sources. If a match exists, extend or compose with it instead of duplicating — run `everville-skill-stocktake` if you suspect the new idea overlaps something already shipped. Only scaffold when nothing covers the need.
+
+**Vetting an external match before adopting it:** read its SKILL.md in full for surprises — shell commands it runs, network calls, credential access. Copy it to a branch and diff against what you'd have written before trusting it. Never wire an unread external skill into the workflow.
 
 ### 1. Scaffold a new plugin
 
@@ -89,6 +102,27 @@ claude plugin validate .                         # marketplace manifest
 ```
 
 Both must pass before commit. Warnings on SKILL.md frontmatter usually mean the YAML block isn't the very first thing in the file — never put HTML comments or blank lines above `---`.
+
+`claude plugin validate` checks manifest structure but does not parse every SKILL.md's YAML. Run this mechanical lint too — it catches a malformed frontmatter block (bad indentation, missing `name`/`description`, a stray tab) that the model wouldn't spot by eye:
+
+```bash
+python3 - <<'PY'
+import glob, yaml, sys
+bad = 0
+for f in glob.glob('plugins/**/SKILL.md', recursive=True):
+    src = open(f).read()
+    if not src.startswith('---'):
+        print(f"FAIL {f}: frontmatter must be the first thing in the file"); bad += 1; continue
+    try:
+        fm = yaml.safe_load(src.split('---', 2)[1])
+    except yaml.YAMLError as e:
+        print(f"FAIL {f}: invalid YAML — {e}"); bad += 1; continue
+    for key in ('name', 'description'):
+        if not fm.get(key):
+            print(f"FAIL {f}: missing '{key}'"); bad += 1
+print('OK' if not bad else f'{bad} problem(s)'); sys.exit(1 if bad else 0)
+PY
+```
 
 ### 3. Bump version
 

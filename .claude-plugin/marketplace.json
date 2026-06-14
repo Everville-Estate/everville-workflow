@@ -20,7 +20,7 @@
       "name": "everville-meta",
       "source": "./plugins/everville-meta",
       "description": "Meta-tooling for the everville-workflow marketplace itself: scaffold plugins, bump versions, audit manifests",
-      "version": "0.1.2",
+      "version": "0.2.0",
       "author": {
         "name": "Everville Estate PTE LTD"
       }
