@@ -154,7 +154,7 @@ Use the standard Claude Code commit trailer:
 Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 
-(The model in use sets its own co-author name, e.g. `Claude Fable 5 <noreply@anthropic.com>`. The old Happy-engineering trailer block is retired.)
+(The model in use sets its own co-author name under `noreply@anthropic.com`. The old Happy-engineering trailer block is retired.)
 
 ## Reference Docs
 

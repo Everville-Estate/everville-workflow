@@ -11,7 +11,7 @@
       "name": "everville-workflow",
       "source": "./plugins/everville-workflow",
       "description": "Unified development ritual, trivial-change whitelist, skill-judge, entropy-reducer, CLAUDE.md refactor, lesson extractor + codebase-pattern-finder agent + /explain-pr-changes and /review-self commands",
-      "version": "0.3.0",
+      "version": "0.4.0",
       "author": {
         "name": "Everville Estate PTE LTD"
       }
@@ -20,7 +20,7 @@
       "name": "everville-meta",
       "source": "./plugins/everville-meta",
       "description": "Meta-tooling for the everville-workflow marketplace itself: scaffold plugins, bump versions, audit manifests",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "author": {
         "name": "Everville Estate PTE LTD"
       }
@@ -38,7 +38,7 @@
       "name": "everville-handoff",
       "source": "./plugins/everville-handoff",
       "description": "Session handoff documents for long-running Everville agent work \u2014 create, resume, staleness-check",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "author": {
         "name": "Everville Estate PTE LTD"
       }
