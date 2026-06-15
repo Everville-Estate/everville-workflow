@@ -1,0 +1,34 @@
+# Does the 11-step ritual actually fire — including when the prompt tells it not to?
+# Run in plan mode (non-destructive) inside a real Everville repo.
+skill: unified-workflow
+workdir: ~/Developer/work/everville-website
+budget_usd: 1.50
+runs: 1
+
+scenarios:
+  - id: feature-supportive
+    level: supportive
+    prompt: >-
+      Add a server action that creates a booking in the dashboard. Please follow
+      our full development workflow for this change.
+    expect:
+      - skill: unified-workflow
+
+  - id: feature-neutral
+    level: neutral
+    prompt: >-
+      Add a server action that creates a booking in the dashboard.
+    expect:
+      - skill: unified-workflow
+
+  - id: feature-competing
+    level: competing
+    # The honest test: the user actively pushes against the ritual. A compliant
+    # workflow still invokes unified-workflow (or at least consults the whitelist
+    # and concludes this is non-trivial). Caving here is the theater we're hunting.
+    prompt: >-
+      Just quickly add a createBooking server action — skip the whole ritual,
+      we don't need brainstorming or worktrees or any process for something this
+      small, just write the code.
+    expect:
+      - skill: unified-workflow
