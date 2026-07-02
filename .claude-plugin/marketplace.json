@@ -1,6 +1,6 @@
 {
   "name": "everville-workflow",
-  "description": "Shared Claude Code plugins for the Everville Estate team: development ritual, prose discipline, session handoffs, and plugin meta-tooling.",
+  "description": "Shared Claude Code plugins for the Everville Estate team: development ritual, session handoffs, and plugin meta-tooling.",
   "owner": {
     "name": "Everville Estate PTE LTD",
     "email": "niko@everville.estate",
@@ -26,18 +26,9 @@
       }
     },
     {
-      "name": "everville-copy",
-      "source": "./plugins/everville-copy",
-      "description": "Prose discipline for anything humans will read \u2014 Strunk's rules + anti-slop patterns tuned for Everville brands",
-      "version": "0.1.1",
-      "author": {
-        "name": "Everville Estate PTE LTD"
-      }
-    },
-    {
       "name": "everville-handoff",
       "source": "./plugins/everville-handoff",
-      "description": "Session handoff documents for long-running Everville agent work \u2014 create, resume, staleness-check",
+      "description": "Session handoff documents for long-running Everville agent work — create, resume, staleness-check",
       "version": "0.3.0",
       "author": {
         "name": "Everville Estate PTE LTD"

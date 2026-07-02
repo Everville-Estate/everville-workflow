@@ -40,8 +40,8 @@ Every reason must state **(1) the specific defect** and **(2) what covers the sa
 
 - ❌ "Retire — superseded."
 - ✅ "Retire — its only trigger ('generate PR body') is fully handled by `/explain-pr-changes`, which also grades the existing body; nothing references this skill."
-- ❌ "Merge — overlaps everville-prose."
-- ✅ "Merge → everville-prose — both fire on 'write copy'; this one's only unique content is the email-subject-line checklist, which should move into everville-prose's quick-checklist."
+- ❌ "Merge — overlaps some-prose-skill."
+- ✅ "Merge → some-prose-skill — both fire on 'write copy'; this one's only unique content is the email-subject-line checklist, which should move into some-prose-skill's quick-checklist."
 
 ## Output
 

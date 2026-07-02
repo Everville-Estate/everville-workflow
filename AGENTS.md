@@ -8,14 +8,13 @@ A **Claude Code plugin marketplace** for the Everville Estate team. Plugins ship
 plugins/
   everville-workflow/    11-step unified ritual + trivial-change whitelist
   everville-meta/        plugin authoring helpers (skills, marketplace mgmt)
-  everville-copy/        prose / commit / PR / UI copy editor
   everville-handoff/     handoff doc generator for context-window transfers
 docs/                    plugin authoring notes
 LICENSE / LICENSES       MIT for the marketplace, see plugin.json per plugin
 marketplace.json         marketplace manifest consumed by Claude Code
 ```
 
-Currently shipped versions: `everville-workflow@0.2.0`, `everville-meta@0.1.0`, `everville-copy@0.1.0`, `everville-handoff@0.1.0` (2026-04-23 release).
+Currently shipped versions: `everville-workflow@0.8.0`, `everville-meta@0.2.0`, `everville-handoff@0.3.0`. `everville-copy` retired 2026-07-02 — prose discipline lives in the `humanizer-ru` skill (BRAND/Personal_Brand, desktop skills-plugin).
 
 ## Plugin contract (Claude Code)
 
