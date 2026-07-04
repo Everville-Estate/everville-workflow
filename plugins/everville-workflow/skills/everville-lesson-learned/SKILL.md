@@ -97,7 +97,7 @@ If there is a second lesson worth noting (maximum 2 additional):
 
 Ask the user: **"Save this as auto-memory feedback so it applies across every Everville repo?"**
 
-If yes, write the lesson to `~/.claude/projects/-Users-niko-air/memory/feedback_<slug>.md` using this frontmatter and update `MEMORY.md` with a one-line pointer:
+If yes, locate the auto-memory root on this machine — it is the directory containing `MEMORY.md`: `ls ~/.claude/projects/*/memory/MEMORY.md`. The project slug in the path changes per machine/user; **never hardcode it**. Write the lesson to `<memory-root>/feedback_<slug>.md` using this frontmatter and update `MEMORY.md` with a one-line pointer:
 
 ```markdown
 ---
@@ -113,7 +113,7 @@ type: feedback
 **How to apply:** {{ when/where this guidance kicks in across Everville repos }}
 ```
 
-Only persist lessons that are **portable across repos**. A quirk of one balicopter view doesn't belong in global memory; a PostgREST / Next.js / Supabase gotcha does. Existing examples in `MEMORY.md`: `feedback_postgrest_fk_ambiguity.md`, `feedback_csp_external_cdn_completeness.md`, `feedback_cron_refresh_dependent_views.md`.
+Only persist lessons that are **portable across repos**. A quirk of one balicopter view doesn't belong in global memory; a PostgREST / Next.js / Supabase gotcha does. Check the current `MEMORY.md` index for existing examples of the `feedback_*` shape (e.g. `feedback_postgrest_embed_ambiguous_fk.md`, `feedback_unstable_cache_cookies.md`) rather than inventing a new convention.
 
 Before writing, check if a matching memory already exists — update in place instead of creating duplicates.
 

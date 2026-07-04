@@ -1,10 +1,10 @@
 # everville-workflow — Plugin Rules
 
-When this plugin is enabled, Claude Code must consult the `unified-workflow` skill at the start of any non-trivial task. Use the `trivial-whitelist` skill to decide whether a change is trivial.
+When this plugin is enabled, Claude Code must consult the `unified-workflow` skill at the start of any non-trivial task. Use the `trivial-whitelist` skill to decide whether a change is trivial. Since 0.9.0 this gate is also injected by a SessionStart hook (`hooks/gate-context.md`) — enforcement no longer relies on description-matching alone.
 
 ## Skills in this plugin
 
-- `unified-workflow` — 11-step development ritual (see `skills/unified-workflow/SKILL.md`)
+- `unified-workflow` — two-track development ritual: FULL 11-step for tier-1/structural changes, LIGHT 4-step (echo → implement → independent verify → ship) otherwise (see `skills/unified-workflow/SKILL.md`)
 - `trivial-whitelist` — hard list of ritual-skip change types (see `skills/trivial-whitelist/SKILL.md`)
 - `everville-skill-judge` — 130-point rubric for accepting new skills (adapted from softaworks, adds D9 Everville Fit)
 - `everville-reduce-entropy` — bias toward deletion; invoked during ISOLATE step
@@ -20,9 +20,11 @@ When this plugin is enabled, Claude Code must consult the `unified-workflow` ski
 
 ## Commands in this plugin
 
-- `/explain-pr-changes` — generate PR body from diff; creates or updates PR; grades any existing body against Why/What/How
-- `/review-self` — self-review diff as mental model before requesting code review
-- `/review-post` — post severity-tagged review findings onto the PR as one atomic, de-duped review with an APPROVE/REQUEST_CHANGES/COMMENT verdict
+- `/explain-pr-changes` — generate PR body from diff; creates or updates PR; grades any existing body against Why/What/How; changesets are dependency-ordered and end with a Gotchas section (absorbed `/review-self` in 0.9.0)
+
+## Hooks in this plugin
+
+- `SessionStart` — injects the workflow gate (`hooks/gate-context.md`) into every session: trivial-whitelist verdict before any change, verifier ≠ implementer, 3-line approval format, no silent step-skipping
 
 ## Install prerequisites
 
@@ -44,6 +46,8 @@ claude plugin install superpowers@superpowers-marketplace
 - 0.6.0 — New `everville-production-audit` skill (adapted from affaan-m/ECC production-audit): a release-surface ship/block gate added as step 9.5 (verify→finish). Local-evidence-only audit of RLS/authz, migration reversibility, webhook/job idempotency, env fail-fast, and secrets, with hard score-caps (BLOCK at 69 for missing RLS / non-idempotent webhook / irreversible migration / leakable secret) and mandatory Evidence-checked / Evidence-missing output. Tuned to the Everville stack (Supabase/Drizzle/Vercel/Next) and house hard rules.
 - 0.7.0 — New `everville-skill-stocktake` skill (adapted from affaan-m/ECC skill-stocktake): periodic marketplace rot/overlap/drift audit that orchestrates `everville-skill-judge` per skill and adds cross-skill overlap clustering; Keep/Improve/Update/Retire/Merge verdicts with a decision-enabling reason rule (name the defect + the replacement, ban "superseded"); read-only, defers deletion to user sign-off + `everville-reduce-entropy`. Plus a `parallel-agent-locking` reference under unified-workflow (heartbeat lock contract from AutoGPT pr-test) wired into the ISOLATE step to address the shared-worktree collision burn.
 - 0.8.0 — New `everville-skill-comply` skill (adapted from affaan-m/ECC skill-comply): a runtime compliance harness that runs scenarios through `claude -p` in plan mode inside a real Everville repo and classifies whether the expected skills fired, reporting a compliance rate per competition level (supportive/neutral/competing) with a THEATER WARNING when a skill folds under a competing prompt. Bundled `scripts/skill_comply.py` + seed scenarios for unified-workflow and trivial-whitelist. Completes the judge→stocktake→comply trio (design → set → behavior). Budget-truncated runs are scored INCONCLUSIVE, not non-compliant (a real correctness fix found during live verification).
+
+- 0.9.0 — Stocktake actions (full audit 2026-07-04, all 14 components judged + usage data from 63 sessions: 318 merged PRs vs 5 ritual invocations). **Enforcement:** new SessionStart gate hook — the ritual no longer relies on description-matching alone. **Two-track ritual:** FULL 11-step reserved for tier-1/structural changes; new LIGHT 4-step track (echo assumptions → TDD implement → independent verify → ship) for everything else non-trivial — friction was the main reason the ritual was skipped. **Fixes:** lesson-learned persisted memory to a previous machine's hardcoded path (silent total failure) — now resolves the memory root by glob; skill-comply cache path was missing the version segment — now resolves latest; explain-pr-changes template was truncated mid-file (unclosed fence) — completed, plus `Close #N` auto-close fix; handoff staleness check used GNU/BSD-incompatible date parsing that broke on macOS — now python3 ISO-8601; trivial-whitelist stale `knowledge/decisions/` path → everville-core KB, and closed the loophole where SKILL.md/agent files passed as "doc-only". **Retired:** `/review-post` (built-in `/code-review --comment` covers posting; severity→verdict mapping folded into unified-workflow step 8) and `/review-self` (dependency-ordered changesets + Gotchas absorbed into `/explain-pr-changes`). **Rewritten:** codebase-pattern-finder agent from 237 verbatim-upstream lines (generic Express examples) to a 40-line documentarian contract with Everville-stack output shape. **Re-routed:** step 3.5 CONTEXT7 PREFETCH → DOCS PREFETCH (neuledge-context L1, context7 L2 fallback), matching the global docs-routing rule; Beads gets an explicit no-`bd` fallback. Handoff 0.3.1: scope note — native resume covers same-machine continuation; handoff is for cross-machine/cross-agent boundaries.
 
 ## Maintainers
 

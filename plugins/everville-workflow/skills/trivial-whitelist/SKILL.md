@@ -27,6 +27,7 @@ Anything involving:
 - Auth flows / session handling / cookies
 - Config files that affect runtime (`next.config.js`, `vercel.json`, `.env.example`, etc.)
 - `CLAUDE.md` at any level
+- Any `SKILL.md`, agent definition, or slash-command file — these govern agent behavior exactly like CLAUDE.md, "doc-only" does not apply
 - Hooks in `.claude/settings.json`
 - Anything the user explicitly flagged as critical (e.g., balicopter aviation code)
 
@@ -47,7 +48,7 @@ AI: [consults trivial-whitelist] → not on list (UI change) → full ritual: ep
 
 If any of these apply, treat the change as non-trivial and run the full ritual — don't stop to ask, and don't talk yourself into the trivial path:
 - Change is mostly formatting but includes one logic line
-- Doc edit in `CLAUDE.md` or `knowledge/decisions/`
+- Doc edit in `CLAUDE.md`, a `SKILL.md`, or ADR/decision content (ADRs live in the everville-core KB — `ev_kb_list type=decision`)
 - Dependency bump crosses major version
 
 If a project-specific `trivial_whitelist_extra` list (set in `./CLAUDE.md`) covers the change, the trivial path applies. Ask the user only when the verdict turns on information you don't have (e.g. whether a changelog entry is actually breaking for this codebase).

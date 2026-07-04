@@ -1,16 +1,33 @@
 ---
 name: unified-workflow
-description: Use when starting any non-trivial change in an Everville team project (feature, bugfix, refactor, migration). Enforces the 11-step ritual — epic, brainstorm, plan, context7, sub-tasks, isolate, implement, e2e, review, verify, finish, close. Consult trivial-whitelist skill first to decide whether the full ritual applies.
+description: Use when starting any non-trivial change in an Everville team project (feature, bugfix, refactor, migration). Two tracks — FULL 11-step ritual (epic, brainstorm, plan, docs-prefetch, sub-tasks, isolate, implement, e2e, review, verify, finish, close) for tier-1 and structural changes, LIGHT 4-step track for everything else non-trivial. Consult trivial-whitelist skill first to decide whether any ritual applies.
 ---
 
-# Unified Workflow — 11-Step Development Ritual
+# Unified Workflow — Development Ritual
 
-Use this skill at the start of any non-trivial change on an Everville project. For one-line typo fixes, dependency bumps, or doc-only edits, check the `trivial-whitelist` skill first — those skip the ritual.
+Use this skill at the start of any non-trivial change on an Everville project. For one-line typo fixes, dependency bumps, or doc-only edits, check the `trivial-whitelist` skill first — those skip the ritual entirely.
 
-## The 11 Steps
+## Pick the track
+
+The full 11-step ritual priced itself out of daily use — when every change costs hours of ceremony, the ritual gets skipped instead of followed. So the ritual is tiered:
+
+**FULL track (the 11 steps below)** when any of these hold:
+- Tier-1 project or surface: balicopter/aviation, financial, investor-facing
+- Structural change: DB schema / migrations / RLS, auth flows, payment/webhook logic, cross-cutting refactor
+- The user explicitly asks for the full ritual
+
+**LIGHT track** for every other non-trivial change:
+1. **ECHO** — restate in ≤4 lines: goal as understood, up to 3 assumptions, done-criterion. Then proceed — the echo exists so the user can correct cheaply, not to block.
+2. **IMPLEMENT** — on a branch, TDD invariant intact (failing test before the code that passes it). Before adding any new file or wrapper, check whether an existing utility covers it.
+3. **VERIFY INDEPENDENTLY** — a checker that isn't the author: built-in `/code-review`, or a fresh-context verifier subagent reading spec + diff cold. Cite the evidence (test output, review verdict) — no self-assessed "done".
+4. **SHIP** — PR via `/explain-pr-changes`; note any deviation in the PR body.
+
+If a LIGHT-track change grows structural mid-flight (a migration appears, auth gets touched), upgrade to FULL from the current step — don't restart.
+
+## The 11 Steps (FULL track)
 
 ### 1. EPIC — Frame the work
-Create or pick a Beads epic (`bd create --type epic`). One epic = one deliverable outcome the user can see. If the task doesn't map to an existing or new epic, stop and ask.
+Create or pick a Beads epic (`bd create --type epic`). One epic = one deliverable outcome the user can see. If the task doesn't map to an existing or new epic, stop and ask. If Beads (`bd`) is not installed, keep the epic and its tasks as a checklist section in the plan doc instead — the framing matters, the tool doesn't.
 
 ### 2. BRAINSTORM — Design before code
 Dispatch the `codebase-pattern-finder` agent to surface existing implementations (Next.js routes, Drizzle schemas, shadcn primitives, server actions) you can model after. If the requirements are genuinely ambiguous — multiple defensible designs, unclear user intent, new domain — invoke `superpowers:brainstorming` and commit a written spec to `docs/superpowers/specs/YYYY-MM-DD-<topic>.md`. If the design is already clear from the request plus existing patterns, write the spec directly and move on; when you have enough information to act, act.
@@ -18,8 +35,8 @@ Dispatch the `codebase-pattern-finder` agent to surface existing implementations
 ### 3. PLAN — Break into milestones
 Invoke `superpowers:writing-plans`. Output: a plan in `docs/superpowers/plans/YYYY-MM-DD-<topic>.md`. Plan at the level of independently verifiable milestones (a migration that applies cleanly, an endpoint with passing tests, a page that renders), not micro-tasks — each milestone should have a stated check that proves it done.
 
-### 3.5. CONTEXT7 PREFETCH — Pin live docs
-For every production dependency touched by the plan, resolve via `mcp__context7__resolve-library-id` and persist the library ID to `.beads/context7-libs.json`. Never ship code against library assumptions from memory — always query fresh docs.
+### 3.5. DOCS PREFETCH — Pin live docs
+For every production dependency touched by the plan, query fresh docs: `neuledge-context` first (local L1 for installed/frequent libraries), `context7` as L2 fallback when L1 has no package or a stale/empty answer — this mirrors the global docs-routing rule. Never ship code against library assumptions from memory.
 
 ### 4. SUB-TASKS — File in Beads
 `bd create` one issue per plan task. Link dependencies with `bd dep add`:
@@ -38,7 +55,7 @@ Invoke `superpowers:test-driven-development`. Tests for a behavior exist and fai
 If the change touches `app/(marketing)/`, dashboards, or any customer-facing flow: invoke `everville-e2e-discipline:e2e-discipline` (when installed) or write Playwright specs following the project's existing conventions. Run against preview deploy URL, not localhost.
 
 ### 8. REVIEW — Fresh-context verification
-Dispatch a fresh-context verifier subagent that reads the spec and the diff cold and reports whether the diff satisfies the spec — separate verifiers outperform self-critique, so this is the primary gate. Dispatch reviewers in parallel and keep working while they run: `superpowers:requesting-code-review` for all tiers; `security-auditor` and `deploy-checker` additionally for tier-1 projects (balicopter, aviation/financial). `/review-self` remains available as an optional pre-pass for organizing a large diff before review. If the change introduces a new skill or SKILL.md, invoke `everville-skill-judge` as a gate before merge.
+Dispatch a fresh-context verifier subagent that reads the spec and the diff cold and reports whether the diff satisfies the spec — separate verifiers outperform self-critique, so this is the primary gate. Dispatch reviewers in parallel and keep working while they run: `superpowers:requesting-code-review` for all tiers; `security-auditor` and `deploy-checker` additionally for tier-1 projects (balicopter, aviation/financial). If the change introduces a new skill or SKILL.md, invoke `everville-skill-judge` as a gate before merge.
 
 Every finding — from the verifier or any reviewer — carries one severity label so triage is consistent:
 - 🔴 **Blocker** — must fix before merge (correctness, security, data loss, breaks the spec)
@@ -46,7 +63,7 @@ Every finding — from the verifier or any reviewer — carries one severity lab
 - 🟡 **Nice-to-have** — worth doing, non-blocking (clarity, minor edge case)
 - 🔵 **Nit** — taste or style, optional
 
-The gate passes when zero 🔴 and no un-triaged 🟠 remain. To land these findings on the GitHub PR as one formal review (atomic, de-duped against existing comments), run `/review-post`.
+The gate passes when zero 🔴 and no un-triaged 🟠 remain. To land findings on the GitHub PR, use the built-in `/code-review --comment` (it posts inline comments to the PR). When posting manually via `gh api .../reviews`, keep it one atomic review (all inline comments + verdict in a single call), prefix bot comments with `🤖 `, de-dup against existing comments before posting, and map severity to the verdict: any 🔴/🟠 → `REQUEST_CHANGES`, only 🟡/🔵 → `COMMENT`, zero findings → `APPROVE`.
 
 ### 9. VERIFY — Prove it works
 Invoke `superpowers:verification-before-completion`. Run the actual commands (tests, builds, deploy-check). Before reporting progress, audit each claim against a tool result from this session — only report work you can point to evidence for; if something is not yet verified, say so explicitly. If tests fail, say so with the output; if a step was skipped, say that.

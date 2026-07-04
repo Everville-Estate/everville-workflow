@@ -17,6 +17,8 @@ description: "Create comprehensive handoff documents for seamless agent session 
 
 Creates handoff documents that let a fresh agent continue work with zero ambiguity — across machines, across agents (Claude Code ↔ Hermes ↔ Codex), across a context boundary, or across a deliberate pause. Use it to checkpoint before context runs low; just don't let it become a reason to wrap up while there's productive work left.
 
+**Scope note:** same-session and same-machine continuation is now covered natively by Claude Code (context summarization + the per-machine auto-memory directory). This skill earns its keep at the boundaries the native mechanisms can't cross: a different machine, a different agent (Hermes/Codex), or a repo-committed checkpoint another teammate will pick up. For a plain "continue tomorrow on this machine" case, native resume is enough — don't create a handoff file out of habit.
+
 ## Mode Selection
 
 - **Creating a handoff** — user wants to save state or pause work. Follow **CREATE**.
@@ -140,7 +142,8 @@ Most recent first. Title and date are in the filename: `YYYY-MM-DD-HHMMSS-<slug>
 ```bash
 FILE="$1"
 CREATED=$(grep -m1 '^\*\*Created:\*\*' "$FILE" | sed 's/.*Created:\*\* //')
-CREATED_EPOCH=$(date -j -f "%Y-%m-%dT%H:%M:%S%z" "${CREATED}" +%s 2>/dev/null || date -d "$CREATED" +%s)
+# python3 handles the ISO-8601 colon offset (+08:00) portably; BSD `date -j -f "%z"` does not, and GNU `date -d` doesn't exist on macOS
+CREATED_EPOCH=$(python3 -c "import datetime,sys; print(int(datetime.datetime.fromisoformat(sys.argv[1]).timestamp()))" "$CREATED")
 NOW=$(date +%s)
 AGE_HOURS=$(( (NOW - CREATED_EPOCH) / 3600 ))
 

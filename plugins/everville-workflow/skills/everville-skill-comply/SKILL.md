@@ -29,7 +29,8 @@ High compliance at *supportive* but low at *competing* = the skill folds under e
 ## Running it
 
 ```bash
-PLUGIN=~/.claude/plugins/cache/everville-workflow/everville-workflow/skills/everville-skill-comply
+# cache path contains a version segment — resolve the latest instead of hardcoding
+PLUGIN=$(ls -d ~/.claude/plugins/cache/everville-workflow/everville-workflow/*/skills/everville-skill-comply | sort -V | tail -1)
 python3 "$PLUGIN/scripts/skill_comply.py" "$PLUGIN/scenarios/unified-workflow.yaml"
 # validate config + see the commands without spending:
 python3 "$PLUGIN/scripts/skill_comply.py" "$PLUGIN/scenarios/unified-workflow.yaml" --dry-run
@@ -37,7 +38,7 @@ python3 "$PLUGIN/scripts/skill_comply.py" "$PLUGIN/scenarios/unified-workflow.ya
 python3 "$PLUGIN/scripts/skill_comply.py" .../unified-workflow.yaml --runs 3 --budget 1.5
 ```
 
-Needs `pyyaml` (`pip install pyyaml`). Note the budget is a *ceiling that overshoots* — the last tool call can push a run slightly past the cap, and a cap set too low yields mostly-inconclusive runs that still cost money. Keep it generous (~$1.20–1.50); the harness prints the worst-case spend before it starts.
+Needs `pyyaml` (`uv pip install pyyaml`; plain `pip` works too). Note the budget is a *ceiling that overshoots* — the last tool call can push a run slightly past the cap, and a cap set too low yields mostly-inconclusive runs that still cost money. Keep it generous (~$1.20–1.50); the harness prints the worst-case spend before it starts.
 
 ## Writing scenarios
 
