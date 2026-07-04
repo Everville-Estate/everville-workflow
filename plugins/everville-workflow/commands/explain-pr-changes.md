@@ -9,7 +9,9 @@ argument-hint: "[issue-number-to-close]"
   Everville modifications: removed "Code-Sage" persona framing; kept process
   structure, mermaid diagram guidance, and triage rules; added Why/What/How
   grading of any existing body; output follows Everville PR conventions
-  (Claude Co-Authored-By, `Close $ARGUMENTS`).
+  (Claude Co-Authored-By, `Close $ARGUMENTS`). 0.9.0: absorbed /review-self —
+  changesets are now dependency-ordered and the template gained a Gotchas
+  section; the truncated output template was completed.
 -->
 
 # /explain-pr-changes
@@ -52,7 +54,7 @@ Begin by thoroughly analyzing the diff. Understand the _intent_ behind the chang
 
 Draft a concise, high-level summary of the PR's purpose and key changes (maximum 150 words). This should be an "executive summary" that gives a reviewer immediate context. Place this at the very top of your output.
 
-If some $ARGUMENTS are given, add to the summary "Close $ARGUMENTS".
+If an issue number is given in $ARGUMENTS, add `Close #<number>` to the summary — the `#` prefix is required for GitHub auto-close to work.
 
 ### Step 3: Visualizing the Architecture (Mermaid Diagrams) - Optional
 
@@ -76,6 +78,8 @@ This is an optional step, which you will perform only if necessary. Your goal is
 ### Step 4: Detailed Changeset Breakdown
 
 Analyze the full file by file and group related changes into logical "changesets". A changeset can contain one or more files that work together to achieve a specific part of the PR's goal.
+
+**Order the changesets by dependency**, so a reviewer can read top-to-bottom: foundation first (types, schemas, migrations), then implementation (the code that uses the foundation), then integration/UI, with tests and config last. Note what each changeset depends on and what it enables.
 
 For **each changeset**, you must provide the following:
 
@@ -138,12 +142,32 @@ sequenceDiagram
 
 **Files Affected:**
 
-- `path/to/file1.go`
-- `path/to/another/file.go`
+- `db/schema/bookings.ts`
+- `supabase/migrations/0030_bookings.sql`
 
 **Summary of Changes:**
 
 - <!-- Bulleted list explaining the specific changes in this changeset. -->
 - <!-- Remember to note any changes to public APIs, function signatures, or global state. -->
 
+**Depends on:** <!-- Nothing (foundation) / Changeset N --> · **Enables:** <!-- which later changesets build on this -->
+
 **[TRIAGE]:** <NEEDS_REVIEW or APPROVED>
+
+---
+
+<!-- Repeat for each changeset, in dependency order. -->
+
+## ⚠️ Gotchas and Non-Obvious Details
+
+<!--
+  - Things that look wrong but are intentional, implicit assumptions, tricky ordering.
+  - Omit the section if there are none.
+-->
+
+Close #<issue-number> <!-- only when an issue number was passed as $ARGUMENTS; the `#` is required for GitHub auto-close -->
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+````
+
+Create or update the PR with this body via `gh pr create` / `gh pr edit`, and update the title.

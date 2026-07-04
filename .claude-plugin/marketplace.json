@@ -10,8 +10,8 @@
     {
       "name": "everville-workflow",
       "source": "./plugins/everville-workflow",
-      "description": "Unified development ritual, trivial-change whitelist, skill-judge, entropy-reducer, CLAUDE.md refactor, lesson extractor + codebase-pattern-finder agent + /explain-pr-changes/review-self and /review-post commands",
-      "version": "0.8.0",
+      "description": "Two-track development ritual (FULL 11-step / LIGHT 4-step) with SessionStart gate hook, trivial-change whitelist, skill-judge, entropy-reducer, CLAUDE.md refactor, lesson extractor, production-audit, stocktake, comply + codebase-pattern-finder agent + /explain-pr-changes command",
+      "version": "0.9.0",
       "author": {
         "name": "Everville Estate PTE LTD"
       }
@@ -28,8 +28,8 @@
     {
       "name": "everville-handoff",
       "source": "./plugins/everville-handoff",
-      "description": "Session handoff documents for long-running Everville agent work — create, resume, staleness-check",
-      "version": "0.3.0",
+      "description": "Session handoff documents for cross-machine / cross-agent Everville work — create, resume, staleness-check (same-machine resume is covered natively)",
+      "version": "0.3.1",
       "author": {
         "name": "Everville Estate PTE LTD"
       }
