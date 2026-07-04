@@ -48,23 +48,32 @@ def main() -> None:
         if exempt in normalized:
             allow()
 
-    # The verdict flag lives inside the repo at .claude/ — the one location a
-    # headless session can always write: .git/ trips the sensitive-path guard,
-    # and paths outside the repo need Bash permission grants (both deadlocks
-    # verified live 2026-07-04). .claude/ is exempt from this gate, so the
-    # Write tool can create the flag under acceptEdits with no extra grants.
-    flag = os.path.join(repo_root, ".claude", f"everville-gate-{sid}")
-    if os.path.exists(flag):
+    # Speed-bump design (4th iteration, all verified live 2026-07-04): there is
+    # NO location a headless session can reliably write a flag to — .git/ trips
+    # the sensitive-path guard, ~/.cache needs a Bash grant, and .claude/ is
+    # blocked by Claude Code's own config protection. So the HOOK records the
+    # marker itself: first Edit/Write in an Everville repo is denied with the
+    # gate instructions (forcing the verdict into attention — measured to be
+    # the lever that flips compliance to 100%), and the retry passes. The model
+    # never needs write permission anywhere.
+    marker_dir = os.path.expanduser("~/.cache/everville-gate")
+    marker = os.path.join(marker_dir, f"{sid}-{os.path.basename(repo_root)}")
+    if os.path.exists(marker):
         allow()
 
+    try:
+        os.makedirs(marker_dir, exist_ok=True)
+        with open(marker, "w") as fh:
+            fh.write(f"denied-once cwd={repo_root} file={file_path}\n")
+    except Exception:
+        pass  # fail open on the next attempt regardless
+
     sys.stderr.write(
-        "everville-workflow gate: no whitelist verdict recorded for this session.\n"
-        "1) Invoke the trivial-whitelist skill and state the verdict (trivial / non-trivial).\n"
-        "2) If non-trivial: invoke unified-workflow and pick the track (FULL for tier-1/structural, LIGHT otherwise) before editing.\n"
-        f"3) Record the verdict to unlock edits for this session by creating the file: {flag}\n"
-        "   (use the Write tool with the verdict as the file content — .claude/ paths are exempt from this gate).\n"
-        "Flag files are session junk — never commit them; if git status shows one, gitignore or delete it after the session.\n"
-        "Do NOT create the flag without doing steps 1-2 first — that defeats the gate and violates the plugin contract.\n"
+        "everville-workflow gate (one-time this session): before this edit —\n"
+        "1) Invoke the trivial-whitelist skill and STATE the verdict (trivial / non-trivial) in your reply.\n"
+        "2) If non-trivial: invoke unified-workflow and pick the track (FULL for tier-1/structural, LIGHT otherwise). Decide yourself — do not ask the user which track.\n"
+        "3) Then retry the edit — it will pass. This gate fires once per session per repo.\n"
+        "Retrying without stating the verdict violates the plugin contract.\n"
     )
     sys.exit(2)
 
