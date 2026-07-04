@@ -48,12 +48,12 @@ def main() -> None:
         if exempt in normalized:
             allow()
 
-    # The verdict flag lives under ~/.cache, keyed by session + repo basename.
-    # NOT in the git dir: Claude Code's sensitive-path guard blocks writes
-    # inside .git/ without interactive approval, which deadlocks headless
-    # sessions (verified live 2026-07-04).
-    flag_dir = os.path.expanduser("~/.cache/everville-gate")
-    flag = os.path.join(flag_dir, f"{sid}-{os.path.basename(repo_root)}")
+    # The verdict flag lives inside the repo at .claude/ — the one location a
+    # headless session can always write: .git/ trips the sensitive-path guard,
+    # and paths outside the repo need Bash permission grants (both deadlocks
+    # verified live 2026-07-04). .claude/ is exempt from this gate, so the
+    # Write tool can create the flag under acceptEdits with no extra grants.
+    flag = os.path.join(repo_root, ".claude", f"everville-gate-{sid}")
     if os.path.exists(flag):
         allow()
 
@@ -61,8 +61,10 @@ def main() -> None:
         "everville-workflow gate: no whitelist verdict recorded for this session.\n"
         "1) Invoke the trivial-whitelist skill and state the verdict (trivial / non-trivial).\n"
         "2) If non-trivial: invoke unified-workflow and pick the track (FULL for tier-1/structural, LIGHT otherwise) before editing.\n"
-        f"3) Record the verdict to unlock edits for this session: mkdir -p '{flag_dir}' && touch '{flag}'\n"
-        "Do NOT touch the flag without doing steps 1-2 first — that defeats the gate and violates the plugin contract.\n"
+        f"3) Record the verdict to unlock edits for this session by creating the file: {flag}\n"
+        "   (use the Write tool with the verdict as the file content — .claude/ paths are exempt from this gate).\n"
+        "Flag files are session junk — never commit them; if git status shows one, gitignore or delete it after the session.\n"
+        "Do NOT create the flag without doing steps 1-2 first — that defeats the gate and violates the plugin contract.\n"
     )
     sys.exit(2)
 

@@ -11,7 +11,7 @@
       "name": "everville-workflow",
       "source": "./plugins/everville-workflow",
       "description": "Two-track development ritual (FULL 11-step / LIGHT 4-step) with SessionStart gate hook, trivial-change whitelist, skill-judge, entropy-reducer, CLAUDE.md refactor, lesson extractor, production-audit, stocktake, comply + codebase-pattern-finder agent + /explain-pr-changes command",
-      "version": "0.11.2",
+      "version": "0.11.3",
       "author": {
         "name": "Everville Estate PTE LTD"
       }
