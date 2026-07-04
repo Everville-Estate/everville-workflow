@@ -1,6 +1,6 @@
 {
   "name": "everville-workflow",
-  "version": "0.11.1",
+  "version": "0.11.2",
   "description": "Two-track development ritual (FULL 11-step for tier-1/structural, LIGHT 4-step otherwise) enforced by a SessionStart gate hook; trivial-change whitelist, skill-judge, entropy-reducer, CLAUDE.md refactor, lesson extractor, production-audit, skill-stocktake, skill-comply + codebase-pattern-finder agent + /explain-pr-changes command.",
   "author": {
     "name": "Everville Estate PTE LTD",
