@@ -72,7 +72,7 @@ Invoke `superpowers:verification-before-completion`. Run the actual commands (te
 If this change will deploy to production, invoke `everville-production-audit` before finishing. VERIFY proves the diff works; this proves the *release surface* is safe (RLS, migration rollback, webhook/job idempotency, env fail-fast, secrets). Tier-1 (balicopter/financial/investor-facing): always. Tier-2: when the change touches a prod surface (migrations, webhooks, auth, env). A BLOCK verdict stops the merge; SHIP-WITH-RISK requires the named risk to be accepted by the user with an owner.
 
 ### 10. FINISH — Integrate
-Invoke `superpowers:finishing-a-development-branch`. For any PR against an Everville repo, run `/explain-pr-changes` to generate or update the PR body from the diff. Merge path depends on project (PR review, direct merge, squash).
+Invoke `superpowers:finishing-a-development-branch`. For any PR against an Everville repo, run `/explain-pr-changes` to generate or update the PR body from the diff. While PR checks run, use the `loop-on-ci` skill (background watch, fail → smallest fix → re-watch; verify `headRefOid` = local HEAD before merging). Merge path depends on project (PR review, direct merge, squash).
 
 ### 11. CLOSE — Record
 `bd close <epic-id> --reason "<one-line outcome>"`. This triggers the memory-bridge hook (when `everville-bootstrap` is installed) which appends the closure to the project's memory file. If the work exposed a pattern worth propagating across Everville repos (regression caught, gotcha found, surprising constraint), invoke `everville-lesson-learned` and persist the lesson as an auto-memory `feedback_*.md` entry.
