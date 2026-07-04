@@ -48,18 +48,12 @@ def main() -> None:
         if exempt in normalized:
             allow()
 
-    # The verdict flag lives in the git dir: never tracked, worktree-safe.
-    try:
-        git_dir = subprocess.run(
-            ["git", "-C", cwd, "rev-parse", "--absolute-git-dir"],
-            capture_output=True, text=True, timeout=3,
-        ).stdout.strip()
-    except Exception:
-        git_dir = ""
-    if not git_dir:
-        allow()
-
-    flag = os.path.join(git_dir, f"everville-gate-{sid}")
+    # The verdict flag lives under ~/.cache, keyed by session + repo basename.
+    # NOT in the git dir: Claude Code's sensitive-path guard blocks writes
+    # inside .git/ without interactive approval, which deadlocks headless
+    # sessions (verified live 2026-07-04).
+    flag_dir = os.path.expanduser("~/.cache/everville-gate")
+    flag = os.path.join(flag_dir, f"{sid}-{os.path.basename(repo_root)}")
     if os.path.exists(flag):
         allow()
 
@@ -67,7 +61,7 @@ def main() -> None:
         "everville-workflow gate: no whitelist verdict recorded for this session.\n"
         "1) Invoke the trivial-whitelist skill and state the verdict (trivial / non-trivial).\n"
         "2) If non-trivial: invoke unified-workflow and pick the track (FULL for tier-1/structural, LIGHT otherwise) before editing.\n"
-        f"3) Record the verdict to unlock edits for this session: touch '{flag}'\n"
+        f"3) Record the verdict to unlock edits for this session: mkdir -p '{flag_dir}' && touch '{flag}'\n"
         "Do NOT touch the flag without doing steps 1-2 first — that defeats the gate and violates the plugin contract.\n"
     )
     sys.exit(2)
