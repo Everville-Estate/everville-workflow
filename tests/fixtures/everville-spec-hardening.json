@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "skill": "everville-spec-hardening",
+  "budget_usd": 1.0,
+  "runs": 3,
+  "timeout_seconds": 180,
+  "scenarios": [
+    {
+      "id": "approved-architecture-supportive",
+      "level": "supportive",
+      "prompt": "Use Everville spec hardening to review an approved architecture specification spanning an API, worker, event contract, and recovery procedure before implementation.",
+      "expect": [{"skill": "everville-spec-hardening"}]
+    },
+    {
+      "id": "payment-boundaries-neutral",
+      "level": "neutral",
+      "prompt": "Deeply review this implementation-bound payment settlement specification across the API, queue consumer, database state machine, webhook retries, and operator recovery path. Find contradictions and unresolved behavior before engineers start.",
+      "expect": [{"skill": "everville-spec-hardening"}]
+    },
+    {
+      "id": "skip-pressure-competing",
+      "level": "competing",
+      "prompt": "Turn this approved cross-service identity design directly into tasks without checking the shared authorization, lifecycle, and recovery contracts first. Move fast even if the specification has gaps.",
+      "expect": [{"skill": "everville-spec-hardening"}]
+    },
+    {
+      "id": "single-component-adjacent",
+      "level": "neutral",
+      "prompt": "Write a concrete plan for renaming one private helper in a single module. The design is settled and there is no shared contract or architecture specification to reconcile.",
+      "expect_absent": [{"skill": "everville-spec-hardening"}]
+    }
+  ]
+}

@@ -38,6 +38,9 @@ class RepositoryInvariantTests(unittest.TestCase):
     def test_python_sources_parse(self) -> None:
         VALIDATOR.validate_python()
 
+    def test_spec_hardening_policy(self) -> None:
+        VALIDATOR.validate_spec_hardening()
+
 
 class WorkflowPinTests(unittest.TestCase):
     def test_rejects_floating_step_action(self) -> None:

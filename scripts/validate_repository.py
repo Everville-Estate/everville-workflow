@@ -15,6 +15,10 @@ FRONTMATTER_RE = re.compile(r"\A---\n(?P<body>.*?)\n---\n", re.DOTALL)
 WORKFLOW_USES_RE = re.compile(
     r"^\s*(?:-\s*)?uses:\s*(?P<value>[^#]+?)\s*(?:#.*)?$", re.MULTILINE
 )
+MARKDOWN_LINK_RE = re.compile(r"\[[^\]]+\]\((?P<target>[^)]+)\)")
+SPEC_HARDENING_DIR = (
+    ROOT / "plugins" / "everville-workflow" / "skills" / "everville-spec-hardening"
+)
 
 
 class ValidationError(Exception):
@@ -138,6 +142,96 @@ def validate_components() -> None:
             fail(f"{display_path(path)}: remote-capable component must be explicit-only")
 
 
+def validate_spec_hardening(skill_dir: pathlib.Path = SPEC_HARDENING_DIR) -> None:
+    expected = {
+        "SKILL.md",
+        "references/boundary-review.md",
+        "references/decision-coverage.md",
+        "references/delivery.md",
+    }
+    actual = {
+        path.relative_to(skill_dir).as_posix()
+        for path in skill_dir.rglob("*")
+        if path.is_file()
+    }
+    if actual != expected:
+        missing = sorted(expected - actual)
+        extra = sorted(actual - expected)
+        fail(
+            "everville-spec-hardening: invalid package inventory "
+            f"(missing={missing}, extra={extra})"
+        )
+
+    skill_path = skill_dir / "SKILL.md"
+    text = skill_path.read_text()
+    match = FRONTMATTER_RE.match(text)
+    if not match:
+        fail("everville-spec-hardening/SKILL.md: missing frontmatter")
+    keys = {
+        line.split(":", 1)[0].strip()
+        for line in match.group("body").splitlines()
+        if line and not line[0].isspace() and ":" in line
+    }
+    if keys != {"name", "description"}:
+        fail(f"everville-spec-hardening: frontmatter keys must be name/description, got {sorted(keys)}")
+
+    for relative in sorted(expected - {"SKILL.md"}):
+        target = skill_dir / relative
+        if f"({relative})" not in text:
+            fail(f"everville-spec-hardening: SKILL.md does not directly link {relative}")
+        if MARKDOWN_LINK_RE.search(target.read_text()):
+            fail(f"everville-spec-hardening: references must not chain links: {relative}")
+
+    for link in MARKDOWN_LINK_RE.finditer(text):
+        raw_target = link.group("target").split("#", 1)[0]
+        if not raw_target or raw_target.startswith(("#", "http://", "https://")):
+            continue
+        resolved = (skill_dir / raw_target).resolve()
+        if skill_dir.resolve() not in resolved.parents or not resolved.is_file():
+            fail(f"everville-spec-hardening: unsafe or missing local link: {raw_target!r}")
+        relative = resolved.relative_to(skill_dir.resolve()).as_posix()
+        if relative not in expected:
+            fail(f"everville-spec-hardening: unregistered local link: {raw_target!r}")
+
+    lowered = "\n".join(
+        path.read_text(errors="ignore")
+        for path in skill_dir.rglob("*")
+        if path.is_file()
+    ).lower()
+    required = (
+        "**review**",
+        "**harden**",
+        "**deliver**",
+        "**ready**",
+        "**ready with explicit defers**",
+        "**not ready**",
+        "external mutations require separate explicit authority",
+        "subagents are optional",
+        "never request or persist full, private",
+        "do not create a parallel status ledger",
+    )
+    for phrase in required:
+        if phrase not in lowered:
+            fail(f"everville-spec-hardening: required policy is absent: {phrase!r}")
+
+    fingerprints = (
+        "spec-interrogation",
+        "spec-cross-cutting-review",
+        "spec-reconciliation",
+        "spec-synthesis",
+        "sp1-the-spine",
+        "gdd-lead-prompt",
+        "actualize readme",
+        "full subagent analysis",
+        "prioritize: must > should > add",
+        "the eight dimensions",
+        "feed-forward validation",
+    )
+    for phrase in fingerprints:
+        if phrase in lowered:
+            fail(f"everville-spec-hardening: forbidden source fingerprint: {phrase!r}")
+
+
 def validate_python() -> None:
     for path in sorted(ROOT.rglob("*.py")):
         if ".git" in path.parts or "__pycache__" in path.parts:
@@ -231,6 +325,7 @@ def main() -> int:
     checks = (
         validate_manifests,
         validate_components,
+        validate_spec_hardening,
         validate_python,
         validate_docs_and_policy,
         validate_filesystem,

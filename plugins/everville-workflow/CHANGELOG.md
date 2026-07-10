@@ -2,6 +2,13 @@
 
 This file is release history for maintainers. It is not loaded as plugin instructions. Runtime behavior comes from the plugin's skills, commands, agents, and hooks.
 
+## 0.13.0 - 2026-07-10
+
+- Add `everville-spec-hardening` for implementation-bound specifications that cross components, shared contracts, critical data, concurrency, or recovery boundaries.
+- Keep routing proportional: brainstorming, routine BYPASS/LIGHT work, code review, debugging, prose cleanup, and bounded single-component plans remain outside the automatic trigger.
+- Preserve existing authorization boundaries and task truth; the skill creates no custom agent, status ledger, remote side effect, or private-reasoning record.
+- Add progressive decision-coverage, boundary-review, and delivery references plus deterministic routing, provenance-boundary, compliance dry-run, and installed-package checks.
+
 ## 0.12.0 - 2026-07-10
 
 - Scope workflow hook context and gate behavior to verified Everville repositories.

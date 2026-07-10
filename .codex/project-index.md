@@ -21,6 +21,7 @@ Stable navigation map. Current task state lives in `.codex/handoff.md`; stage hi
 ## Core Subsystems
 
 - `plugins/everville-workflow/skills/` - change-execution workflow, release, CI, entropy, and lesson guidance.
+- `plugins/everville-workflow/skills/everville-spec-hardening/` - proportional REVIEW/HARDEN/DELIVER guidance for existing multi-component or high-risk specifications.
 - `plugins/everville-workflow/hooks/` - repository-scoped workflow attention gate.
 - `plugins/everville-workflow/agents/` - read-only pattern and CI observers.
 - `plugins/everville-meta/` - opt-in marketplace authoring, instruction refactoring, skill-quality, inventory, and compliance-diagnostic tooling.
@@ -44,6 +45,7 @@ Stable navigation map. Current task state lives in `.codex/handoff.md`; stage hi
 - `claude plugin validate plugins/everville-meta --strict`
 - `claude plugin validate plugins/everville-handoff --strict`
 - `scripts/validate_marketplace_install.sh`
+- `python3 plugins/everville-meta/skills/everville-skill-comply/scripts/skill_comply.py tests/fixtures/everville-spec-hardening.json --plugin-dir plugins/everville-workflow --workdir . --dry-run`
 - `scripts/orchestration/run_process_verification.sh`
 
 ## Conventions And Boundaries
