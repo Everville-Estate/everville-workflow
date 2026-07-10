@@ -1,111 +1,134 @@
 ---
 name: unified-workflow
-description: Use when starting any non-trivial change in an Everville team project (feature, bugfix, refactor, migration). Two tracks — FULL 11-step ritual (epic, brainstorm, plan, docs-prefetch, sub-tasks, isolate, implement, e2e, review, verify, finish, close) for tier-1 and structural changes, LIGHT 4-step track for everything else non-trivial. Consult trivial-whitelist skill first to decide whether any ritual applies.
+description: Use when starting a non-trivial feature, bug fix, refactor, migration, or runtime-affecting change in an Everville project. Route first through trivial-whitelist, then use either the LIGHT four-phase track for ordinary non-trivial work or the FULL 11-step track for critical or structural work. Covers planning, docs, isolation, implementation, preview/E2E, stable-SHA review, verification, production audit, PR integration, and closeout with explicit fallbacks when optional tools are unavailable.
 ---
 
-# Unified Workflow — Development Ritual
+# Unified Workflow
 
-Use this skill at the start of any non-trivial change on an Everville project. For one-line typo fixes, dependency bumps, or doc-only edits, check the `trivial-whitelist` skill first — those skip the ritual entirely.
+Use this skill at the start of non-trivial work in an Everville project. Invoke `trivial-whitelist` first; its verdict is one of:
 
-## Pick the track
+- **BYPASS** — direct edit plus proportionate verification.
+- **LIGHT** — ordinary non-trivial work.
+- **FULL** — critical or structural work.
 
-The full 11-step ritual priced itself out of daily use — when every change costs hours of ceremony, the ritual gets skipped instead of followed. So the ritual is tiered:
+Proceed without ceremonial permission requests. Pause only for destructive/irreversible actions, a real scope change, missing authority, or information only the user can provide.
 
-**FULL track (the 11 steps below)** when any of these hold:
-- Tier-1 project or surface: balicopter/aviation, financial, investor-facing
-- Structural change: DB schema / migrations / RLS, auth flows, payment/webhook logic, cross-cutting refactor
-- The user explicitly asks for the full ritual
+## Choose track and tier
 
-**LIGHT track** for every other non-trivial change:
-1. **ECHO** — restate in ≤4 lines: goal as understood, up to 3 assumptions, done-criterion. Then proceed — the echo exists so the user can correct cheaply, not to block.
-2. **IMPLEMENT** — on a branch, TDD invariant intact (failing test before the code that passes it). Before adding any new file or wrapper, check whether an existing utility covers it.
-3. **VERIFY INDEPENDENTLY** — a checker that isn't the author: built-in `/code-review`, or a fresh-context verifier subagent reading spec + diff cold. Cite the evidence (test output, review verdict) — no self-assessed "done".
-4. **SHIP** — PR via `/explain-pr-changes`; note any deviation in the PR body.
+Use **FULL** when any condition holds:
 
-If a LIGHT-track change grows structural mid-flight (a migration appears, auth gets touched), upgrade to FULL from the current step — don't restart.
+- Critical surface: aviation, financial, investor-facing, or another explicitly Tier-1 project/surface.
+- Structural or high-risk change: database schema/migration/RLS, auth/session, payments/webhooks, secrets/permissions, cross-cutting refactor, or irreversible data operation.
+- The user explicitly requests FULL.
 
-## The 11 Steps (FULL track)
+Use **LIGHT** for every other non-trivial change. Upgrade from LIGHT to FULL at the current phase if critical/structural scope appears; do not restart completed work.
 
-### 1. EPIC — Frame the work
-Create or pick a Beads epic (`bd create --type epic`). One epic = one deliverable outcome the user can see. If the task doesn't map to an existing or new epic, stop and ask. If Beads (`bd`) is not installed, keep the epic and its tasks as a checklist section in the plan doc instead — the framing matters, the tool doesn't.
+Tier affects review and release gates, not whether ordinary work receives any verification:
 
-### 2. BRAINSTORM — Design before code
-Dispatch the `codebase-pattern-finder` agent to surface existing implementations (Next.js routes, Drizzle schemas, shadcn primitives, server actions) you can model after. If the requirements are genuinely ambiguous — multiple defensible designs, unclear user intent, new domain — invoke `superpowers:brainstorming` and commit a written spec to `docs/superpowers/specs/YYYY-MM-DD-<topic>.md`. If the design is already clear from the request plus existing patterns, write the spec directly and move on; when you have enough information to act, act.
+| Tier | Default evidence | Review rule |
+|---|---|---|
+| 1 — Critical | Preview/E2E when a user flow exists; production audit always | Independent code review plus security/deploy review where relevant; missing independent review blocks merge |
+| 2 — Active | Preview/E2E for visual or flow changes | Independent code review before merge |
+| 3 — Experimental | Targeted tests; E2E optional | Independent review before merge; self-review is acceptable only for a throwaway spike that will not merge or deploy |
 
-### 3. PLAN — Break into milestones
-Invoke `superpowers:writing-plans`. Output: a plan in `docs/superpowers/plans/YYYY-MM-DD-<topic>.md`. Plan at the level of independently verifiable milestones (a migration that applies cleanly, an endpoint with passing tests, a page that renders), not micro-tasks — each milestone should have a stated check that proves it done.
+Read an explicit tier from project instructions. If bootstrap/tier metadata is absent, classify named critical surfaces as Tier 1 and everything else as **Tier 2**. Never infer Tier 3 merely because a repo is new.
 
-### 3.5. DOCS PREFETCH — Pin live docs
-For every production dependency touched by the plan, query fresh docs: `neuledge-context` first (local L1 for installed/frequent libraries), `context7` as L2 fallback when L1 has no package or a stale/empty answer — this mirrors the global docs-routing rule. Never ship code against library assumptions from memory.
+## LIGHT — four phases
 
-### 4. SUB-TASKS — File in Beads
-`bd create` one issue per plan task. Link dependencies with `bd dep add`:
-- `blocks` / `blocked-by` — strict ordering
-- `parent` / `child` — hierarchy
-- `discovered-from` — scope creep from parent
-- `related` — soft links
+1. **ECHO** — in at most four lines, state the goal, up to three assumptions, and observable done criterion. Continue so the user can correct cheaply.
+2. **IMPLEMENT** — work on a branch; inspect existing patterns before adding files or wrappers. For testable behavior, make the relevant test fail before implementation and pass afterward. Do not invent a meaningless test for prose, generated files, or pure formatting.
+3. **PROVE** — run targeted local checks. If user-visible, open/update a draft PR, obtain the preview, and test the preview before review. Establish a candidate commit SHA, then obtain independent review against that SHA. A review finding that changes code creates a new candidate SHA and requires affected checks/review again.
+4. **FINISH** — update the PR body from the final diff, confirm required checks and review belong to the final candidate SHA, merge through the project’s normal path, and record deviations.
 
-### 5. ISOLATE — Worktree
-Invoke `superpowers:using-git-worktrees`. Create an isolated worktree per epic. Never modify upstream branches directly. Before adding any new file, module, or wrapper during implementation, invoke `everville-reduce-entropy` to check whether an existing utility already covers it. If you dispatch parallel build agents, give each its own worktree — sharing one checkout collides on `HEAD` (a known team burn). When agents genuinely must share a resource, serialize with the lock protocol in `references/parallel-agent-locking.md`.
+If an independent reviewer is temporarily unavailable, do not relabel self-review as independent. Tier 1 remains blocked; for Tier 2 or merge-bound Tier 3, leave the PR awaiting independent review.
 
-### 6. IMPLEMENT — TDD with discipline
-Invoke `superpowers:test-driven-development`. Tests for a behavior exist and fail before the implementation makes them pass — that invariant is non-negotiable; the per-line choreography is not. Work at whatever unit size keeps the tests honest, and commit at each green milestone. Don't add features, abstractions, or error handling beyond what the task requires; only validate at system boundaries.
+## FULL — 11 steps
 
-### 7. E2E — User-visible regression gate
-If the change touches `app/(marketing)/`, dashboards, or any customer-facing flow: invoke `everville-e2e-discipline:e2e-discipline` (when installed) or write Playwright specs following the project's existing conventions. Run against preview deploy URL, not localhost.
+### 1. FRAME
 
-### 8. REVIEW — Fresh-context verification
-Dispatch a fresh-context verifier subagent that reads the spec and the diff cold and reports whether the diff satisfies the spec — separate verifiers outperform self-critique, so this is the primary gate. Dispatch reviewers in parallel and keep working while they run: `superpowers:requesting-code-review` for all tiers; `security-auditor` and `deploy-checker` additionally for tier-1 projects (balicopter, aviation/financial). If the change introduces a new skill or SKILL.md, invoke `everville-skill-judge` as a gate before merge.
+Create or select one Beads epic for the user-visible outcome. If `bd` is unavailable, use a checklist section in the plan; Beads is optional, outcome framing is not.
 
-Every finding — from the verifier or any reviewer — carries one severity label so triage is consistent:
-- 🔴 **Blocker** — must fix before merge (correctness, security, data loss, breaks the spec)
-- 🟠 **Should-fix** — fix before merge unless explicitly deferred (clear bug, missing test on a critical path)
-- 🟡 **Nice-to-have** — worth doing, non-blocking (clarity, minor edge case)
-- 🔵 **Nit** — taste or style, optional
+### 2. DESIGN
 
-The gate passes when zero 🔴 and no un-triaged 🟠 remain. To land findings on the GitHub PR, use the built-in `/code-review --comment` (it posts inline comments to the PR). When posting manually via `gh api .../reviews`, keep it one atomic review (all inline comments + verdict in a single call), prefix bot comments with `🤖 `, de-dup against existing comments before posting, and map severity to the verdict: any 🔴/🟠 → `REQUEST_CHANGES`, only 🟡/🔵 → `COMMENT`, zero findings → `APPROVE`.
+Inspect existing implementations before proposing a new pattern. Use `codebase-pattern-finder` when available. If multiple defensible designs or unclear domain requirements remain, use a brainstorming skill/process and write a short spec. If the request plus repository evidence determines the design, record it directly and continue.
 
-### 9. VERIFY — Prove it works
-Invoke `superpowers:verification-before-completion`. Run the actual commands (tests, builds, deploy-check). Before reporting progress, audit each claim against a tool result from this session — only report work you can point to evidence for; if something is not yet verified, say so explicitly. If tests fail, say so with the output; if a step was skipped, say that.
+### 3. PLAN + DOCS
 
-### 9.5. PRODUCTION AUDIT — Release-surface gate
-If this change will deploy to production, invoke `everville-production-audit` before finishing. VERIFY proves the diff works; this proves the *release surface* is safe (RLS, migration rollback, webhook/job idempotency, env fail-fast, secrets). Tier-1 (balicopter/financial/investor-facing): always. Tier-2: when the change touches a prod surface (migrations, webhooks, auth, env). A BLOCK verdict stops the merge; SHIP-WITH-RISK requires the named risk to be accepted by the user with an owner.
+Write independently verifiable milestones with a proof command or observation for each. For every production dependency whose behavior matters, query current docs through the configured docs stack before implementation. Record version-sensitive conclusions in the plan; do not claim current-doc verification when the docs tools are unavailable.
 
-### 10. FINISH — Integrate
-Invoke `superpowers:finishing-a-development-branch`. For any PR against an Everville repo, run `/explain-pr-changes` to generate or update the PR body from the diff. While PR checks run, use the `loop-on-ci` skill (background watch, fail → smallest fix → re-watch; verify `headRefOid` = local HEAD before merging). Merge path depends on project (PR review, direct merge, squash).
+### 4. TASKS
 
-### 11. CLOSE — Record
-`bd close <epic-id> --reason "<one-line outcome>"`. This triggers the memory-bridge hook (when `everville-bootstrap` is installed) which appends the closure to the project's memory file. If the work exposed a pattern worth propagating across Everville repos (regression caught, gotcha found, surprising constraint), invoke `everville-lesson-learned` and persist the lesson as an auto-memory `feedback_*.md` entry.
+Create one Beads issue per milestone and link real dependencies. If Beads is unavailable, maintain the same dependency order in the plan checklist. Avoid micro-tasks that add tracking without independent verification value.
 
-## Required upstream skills
+### 5. ISOLATE
 
-This workflow assumes you have the following skills installed (via `superpowers` plugin):
-- `superpowers:brainstorming`
-- `superpowers:writing-plans`
-- `superpowers:test-driven-development`
-- `superpowers:using-git-worktrees`
-- `superpowers:requesting-code-review`
-- `superpowers:verification-before-completion`
-- `superpowers:finishing-a-development-branch`
+Use a dedicated branch/worktree. Never modify a protected/upstream branch directly. Before introducing a wrapper, helper, module, or abstraction, invoke `everville-reduce-entropy` and compare against existing utilities. Parallel writers require disjoint worktrees; if they must share a resource, load and follow [`references/parallel-agent-locking.md`](references/parallel-agent-locking.md) in full.
 
-Install with:
-```bash
-claude plugin marketplace add obra/superpowers-marketplace
-claude plugin install superpowers@superpowers-marketplace
-```
+### 6. IMPLEMENT
 
-## When to skip steps
+Use test-driven development for testable behavior: observe the relevant test fail for the intended reason, implement the smallest correct change, then observe it pass. Preserve safety, types, observability, and system-boundary validation required by the task. Commit at coherent green milestones.
 
-Steps 7 (E2E) and 8 (review) are gated by tier:
+### 7. PREVIEW + E2E
 
-| Tier | E2E required | Extra reviewers |
-|------|-------------|-----------------|
-| 1 — Critical (aviation, financial, prod user-facing) | Yes | security-auditor, deploy-checker |
-| 2 — Active (internal tools, admin UIs) | If visual/flow changes | code-reviewer only |
-| 3 — Experimental (prototypes, spikes) | No | Self-review OK |
+Run local preflight checks before publishing. For a customer-facing page, dashboard, or user flow:
 
-Projects declare tier in their `./CLAUDE.md` (set by `/bootstrap-project` when `everville-bootstrap` is installed).
+1. Push the current commit and open/update a draft PR.
+2. Generate the PR body with `/explain-pr-changes` when available, or write the same evidence manually.
+3. Wait for the preview deployment associated with that commit.
+4. Run the project’s E2E suite against the preview URL, using `everville-e2e-discipline:e2e-discipline` when installed or the repository’s existing Playwright convention.
 
-## Hard rule
+Never claim preview E2E from localhost. Fixes from E2E create a new candidate commit and require a new matching preview.
 
-Don't silently skip steps to ship faster — the ritual exists because shortcuts have burned the team before. But don't over-correct into asking permission for everything either: pause for the user when the work genuinely requires it — a destructive or irreversible action, a real scope change, or input only they can provide — and otherwise use your judgment and proceed, noting any deviation from a step in the PR body.
+### 8. REVIEW A STABLE SHA
+
+After preview/E2E changes settle, record the candidate commit SHA and give the spec plus diff for that exact SHA to a fresh-context reviewer. Use `superpowers:requesting-code-review`, built-in `/code-review`, a verifier subagent, or an independent human/platform reviewer, depending on what is available.
+
+Tier 1 additionally needs security and deploy review when those concerns apply. New or modified `SKILL.md` files require `everville-skill-judge` before merge.
+
+Every finding gets one severity:
+
+- **Blocker** — correctness, security, data loss, or spec failure; must fix.
+- **Should-fix** — clear bug or missing critical-path test; fix or explicitly defer with owner.
+- **Nice-to-have** — worthwhile and non-blocking.
+- **Nit** — optional style/taste.
+
+The gate passes with zero blockers and no untriaged should-fix findings. Any code change after review invalidates the stable-SHA claim: create a new candidate SHA and rerun affected verification/review. If publishing GitHub comments manually, de-duplicate them and submit one coherent review; never post a stale-SHA approval.
+
+### 9. VERIFY + PRODUCTION AUDIT
+
+Run actual tests, build, type checks, and project release checks against the candidate SHA. Audit every completion claim against output from the current run.
+
+If deploying to production, invoke `everville-production-audit` for:
+
+- every Tier-1 release; and
+- Tier-2 releases touching migrations/RLS, webhooks/jobs, auth, env/secrets, or another production control surface.
+
+A BLOCK verdict stops merge. SHIP-WITH-RISK requires explicit acceptance of the named risk and an owner. Missing optional audit tooling does not make the audit pass: perform the checklist manually and record the fallback; Tier 1 stays blocked if required evidence cannot be produced.
+
+### 10. FINISH
+
+Update the PR body from the final diff. Watch CI with `loop-on-ci` when available, otherwise use the repository’s native checks. Before merge, prove the PR head SHA, preview/E2E evidence, required review, and required checks all correspond to the current local HEAD. Merge through the project’s configured path.
+
+### 11. CLOSE
+
+Close the epic/checklist with a one-line outcome. If the work revealed a reusable Everville lesson, persist it through `everville-lesson-learned` when available or record it in the project’s normal handoff/knowledge surface.
+
+## Optional dependency policy
+
+Named plugins and skills improve consistency but are not silently assumed:
+
+- When a named skill/tool is available, invoke it at the stated phase.
+- When it is unavailable, perform the documented equivalent locally and record the fallback in the plan or PR.
+- Never report an unavailable tool as invoked or its evidence as produced.
+- Do not install plugins or create external resources without user authorization.
+- A fallback may preserve process but cannot waive a Tier-1 evidence gate.
+
+Common optional helpers include Superpowers planning/TDD/worktree/review/verification skills, Beads, codebase-pattern-finder, E2E discipline, loop-on-ci, and explain-pr-changes.
+
+## Hard rules
+
+- Keep process proportional: BYPASS, LIGHT, and FULL are distinct outcomes.
+- Review the commit that will merge, not an earlier diff.
+- A preview-dependent check happens only after a matching preview exists.
+- Never substitute narrative confidence for missing evidence.
+- Record deviations; do not silently skip required gates.

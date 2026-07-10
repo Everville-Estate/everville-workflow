@@ -1,89 +1,91 @@
 ---
 name: everville-reduce-entropy
-description: Manual-only skill for minimizing total codebase size across Everville repos. Invoke during ISOLATE step of unified-workflow whenever tempted to add wrappers, helpers, or abstractions, or when the user explicitly asks to simplify. Measures success by final code amount, not effort. Bias toward deletion.
+description: Use when an Everville change may add wrappers, helpers, abstractions, dependencies, duplicated paths, or obsolete code, or when the user asks to simplify. Minimize accidental complexity and long-term ownership cost while preserving required behavior, safety, correctness, tests, types, observability, operability, and legitimate additive features. Treat line count as a diagnostic, never an automatic rejection gate.
 ---
-
-<!--
-  Adapted from softaworks/agent-toolkit (reducing-entropy) — MIT licensed.
-  See LICENSES/softaworks-MIT.txt for the original license text.
-  Everville modifications: renamed to everville-reduce-entropy; wired into the
-  ISOLATE step of unified-workflow (invoke whenever tempted to add a wrapper,
-  helper, or abstraction during planning/implementation).
--->
 
 # Everville Reduce Entropy
 
-More code begets more code. Entropy accumulates. This skill biases toward the smallest possible codebase.
+Optimize the **final ownership burden**, not the size of the patch and not raw lines alone.
 
-**Core question:** "What does the codebase look like *after*?"
+The target is the smallest coherent system that fully satisfies required behavior and operational constraints. Deletion is valuable when it removes accidental complexity; addition is justified when it is necessary for correctness, safety, evidence, or a requested capability.
 
-## Before You Begin
+## Load a relevant mindset only when useful
 
-**Load at least one mindset from `references/`**
+For a non-obvious design trade-off, inspect the frontmatter in `references/` and read the one most relevant file in full. State its principle before applying it. Do not load every reference, and do not delay a simple duplicate-removal decision for philosophical reading.
 
-1. List the files in the reference directory
-2. Read frontmatter descriptions to pick which applies
-3. Load at least one
-4. State which you loaded and its core principle
+Useful routes:
 
-**Do not proceed until you've done this.**
+- Existing data can replace behavior-heavy abstraction → `references/data-over-abstractions.md`
+- A design becomes simpler by separating responsibilities → `references/design-is-taking-apart.md`
+- Choosing between familiar convenience and structural simplicity → `references/simplicity-vs-easy.md`
+- Deciding whether a capability is expensive to retrofit later → `references/expensive-to-add-later.md`
+- Adding another mindset → `references/adding-reference-mindsets.md`
 
-## The Goal
+## Decision order
 
-The goal is **less total code in the final codebase** - not less code to write right now.
+### 1. Fix required constraints
 
-- Writing 50 lines that delete 200 lines = net win
-- Keeping 14 functions to avoid writing 2 = net loss
-- "No churn" is not a goal. Less code is the goal.
+List what the result must preserve or add:
 
-**Measure the end state, not the effort.**
+- User-requested behavior and compatibility.
+- Correctness, security, privacy, and data integrity.
+- Tests and type guarantees that make those properties observable.
+- Logging, metrics, failure handling, rollback, and operability required by the risk.
+- Framework/repository conventions and explicit compliance requirements.
 
-## Three Questions
+These are constraints, not entropy to delete. A smaller result that violates one is not simpler; it is incomplete.
 
-### 1. What's the smallest codebase that solves this?
+### 2. Search for existing coverage
 
-Not "what's the smallest change" - what's the smallest *result*.
+Before adding a helper, wrapper, module, flag, or dependency, inspect nearby patterns and answer:
 
-- Could this be 2 functions instead of 14?
-- Could this be 0 functions (delete the feature)?
-- What would we delete if we did this?
+- Does an existing primitive already own this behavior?
+- Can one existing path be extended without creating two sources of truth?
+- Is the proposed abstraction backed by multiple real uses, or only imagined flexibility?
+- What becomes obsolete if the proposal lands?
 
-### 2. Does the proposed change result in less total code?
+Prefer reuse or consolidation when ownership stays clear. Do not force unrelated concepts through one helper merely to reduce count.
 
-Count lines before and after. If after > before, reject it.
+### 3. Compare ownership cost
 
-- "Better organized" but more code = more entropy
-- "More flexible" but more code = more entropy
-- "Cleaner separation" but more code = more entropy
+Compare credible options across:
 
-### 3. What can we delete?
+| Dimension | Question |
+|---|---|
+| Concepts | How many distinct rules must a maintainer understand? |
+| Sources of truth | Can behavior drift between files, layers, or flags? |
+| Dependencies | Does this add lifecycle, security, or upgrade burden? |
+| Change surface | How many places must change for the next likely requirement? |
+| Evidence | Are tests/types/observability sufficient to trust the simpler shape? |
+| Removal | Which old code, configuration, compatibility path, or dependency can now disappear? |
 
-Every change is an opportunity to delete. Ask:
+Use line/file counts as clues to investigate, not as the verdict. Ten explicit lines can be safer and cheaper than a clever two-line abstraction; a necessary feature may legitimately add code.
 
-- What does this make obsolete?
-- What was only needed because of what we're replacing?
-- What's the maximum we could remove?
+### 4. Choose and clean up
 
-## Red Flags
+Choose the option with the lowest total ownership cost that satisfies all constraints. Remove newly obsolete code in the same change when safe. If compatibility or staged migration prevents removal, name the retained path, owner, and removal condition instead of calling the work complete entropy reduction.
 
-- **"Keep what exists"** - Status quo bias. The question is total code, not churn.
-- **"This adds flexibility"** - Flexibility for what? YAGNI.
-- **"Better separation of concerns"** - More files/functions = more code. Separation isn't free.
-- **"Type safety"** - Worth how many lines? Sometimes runtime checks in less code wins.
-- **"Easier to understand"** - 14 things are not easier than 2 things.
+## Red flags
 
-## When This Doesn't Apply
+- **“Future flexibility” without a named near-term use** — likely speculative surface area.
+- **Wrapper that only renames another API** — adds navigation without policy or safety value.
+- **Two ways to perform the same operation** — creates drift unless migration is explicit.
+- **Deduplication across unrelated concepts** — fewer lines, tighter coupling.
+- **Deleting validation/tests/types/logging to improve counts** — hides risk rather than reducing complexity.
+- **Fighting framework conventions** — local cleverness becomes institutional maintenance cost.
+- **Rejecting every net-additive change** — confuses product capability and necessary safeguards with accidental complexity.
 
-- The codebase is already minimal for what it does
-- You're in a framework with strong conventions (don't fight it)
-- Regulatory/compliance requirements mandate certain structures
+## Output
 
-## Reference Mindsets
+State the decision compactly:
 
-See `references/` for philosophical grounding.
+```text
+Required constraints: ...
+Existing coverage inspected: ...
+Chosen shape: ...
+Ownership cost reduced: ...
+Necessary additions retained: ...
+Obsolete code removed or deferred with condition: ...
+```
 
-To add new mindsets, see `adding-reference-mindsets.md`.
-
----
-
-**Bias toward deletion. Measure the end state.**
+Bias toward deletion **after** requirements and evidence are protected. The win is a system that is easier to own, not merely a smaller diff.

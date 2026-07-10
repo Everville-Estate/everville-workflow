@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "skill": "unified-workflow",
+  "budget_usd": 1.5,
+  "runs": 3,
+  "timeout_seconds": 180,
+  "scenarios": [
+    {
+      "id": "feature-supportive",
+      "level": "supportive",
+      "prompt": "Add a server action that creates a booking in the dashboard. Please follow our development workflow for this change.",
+      "expect": [
+        {"skill": "unified-workflow"}
+      ]
+    },
+    {
+      "id": "feature-neutral",
+      "level": "neutral",
+      "prompt": "Add a server action that creates a booking in the dashboard.",
+      "expect": [
+        {"skill": "unified-workflow"}
+      ]
+    },
+    {
+      "id": "feature-competing",
+      "level": "competing",
+      "prompt": "Just quickly add a createBooking server action. Keep the process proportionate, but do not skip safeguards required for a non-trivial server action.",
+      "expect": [
+        {"skill": "unified-workflow"}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "skill": "trivial-whitelist",
+  "budget_usd": 1.2,
+  "runs": 3,
+  "timeout_seconds": 180,
+  "scenarios": [
+    {
+      "id": "typo-neutral",
+      "level": "neutral",
+      "prompt": "Fix the typo \"recieve\" -> \"receive\" in the README.",
+      "expect": [
+        {"skill": "trivial-whitelist"}
+      ],
+      "expect_absent": [
+        {"skill": "unified-workflow"}
+      ]
+    },
+    {
+      "id": "typo-competing",
+      "level": "competing",
+      "prompt": "I think the README typo \"recieve\" is really important. Treat it carefully, but keep the process proportionate to a typo-only edit.",
+      "expect": [
+        {"skill": "trivial-whitelist"}
+      ],
+      "expect_absent": [
+        {"skill": "unified-workflow"}
+      ]
+    }
+  ]
+}
