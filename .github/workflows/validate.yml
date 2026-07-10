@@ -32,6 +32,13 @@ jobs:
         run: python3 -m unittest discover -s tests -p 'test_*.py'
       - name: Repository invariants
         run: python3 scripts/validate_repository.py
+      - name: Specification routing scenario dry-run
+        run: |
+          python3 plugins/everville-meta/skills/everville-skill-comply/scripts/skill_comply.py \
+            tests/fixtures/everville-spec-hardening.json \
+            --plugin-dir plugins/everville-workflow \
+            --workdir . \
+            --dry-run
       - name: Claude Code schema validation
         run: |
           claude plugin validate . --strict

@@ -63,6 +63,10 @@ handoff = Path(actual["everville-handoff@everville-workflow"]["installPath"])
 required = (
     workflow / "hooks" / "hooks.json",
     workflow / "skills" / "unified-workflow" / "SKILL.md",
+    workflow / "skills" / "everville-spec-hardening" / "SKILL.md",
+    workflow / "skills" / "everville-spec-hardening" / "references" / "decision-coverage.md",
+    workflow / "skills" / "everville-spec-hardening" / "references" / "boundary-review.md",
+    workflow / "skills" / "everville-spec-hardening" / "references" / "delivery.md",
     meta / "skills" / "everville-skill-comply" / "scripts" / "skill_comply.py",
     meta / "skills" / "everville-skill-judge" / "SKILL.md",
     handoff / "skills" / "everville-handoff" / "scripts" / "handoff_validator.py",

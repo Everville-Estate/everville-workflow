@@ -10,8 +10,8 @@
     {
       "name": "everville-workflow",
       "source": "./plugins/everville-workflow",
-      "description": "Repository-scoped BYPASS/LIGHT/FULL development workflow with advisory hooks, entropy/lesson/production/CI skills, two focused agents, and a read-only PR-summary command",
-      "version": "0.12.0",
+      "description": "Repository-scoped BYPASS/LIGHT/FULL development workflow with proportional specification hardening, advisory hooks, entropy/lesson/production/CI skills, two focused agents, and a read-only PR-summary command",
+      "version": "0.13.0",
       "author": {
         "name": "Everville Estate PTE LTD"
       }

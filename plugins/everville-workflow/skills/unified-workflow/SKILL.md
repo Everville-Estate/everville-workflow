@@ -52,6 +52,8 @@ Create or select one Beads epic for the user-visible outcome. If `bd` is unavail
 
 Inspect existing implementations before proposing a new pattern. Use `codebase-pattern-finder` when available. If multiple defensible designs or unclear domain requirements remain, use a brainstorming skill/process and write a short spec. If the request plus repository evidence determines the design, record it directly and continue.
 
+When an existing approved or implementation-bound specification crosses components, shared contracts, critical data, concurrency, or recovery boundaries, invoke `everville-spec-hardening` before decomposing implementation tasks. Do not invoke it for initial brainstorming or a bounded single-component plan merely because a document is called a spec.
+
 ### 3. PLAN + DOCS
 
 Write independently verifiable milestones with a proof command or observation for each. For every production dependency whose behavior matters, query current docs through the configured docs stack before implementation. Record version-sensitive conclusions in the plan; do not claim current-doc verification when the docs tools are unavailable.

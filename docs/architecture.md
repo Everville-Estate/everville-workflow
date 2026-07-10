@@ -12,7 +12,7 @@ Marketplace installs are copied into Claude Code's plugin cache. Editing this ch
 
 ### `everville-workflow`
 
-- Skills implement BYPASS/LIGHT/FULL routing, entropy control, lessons, production auditing, and CI procedures.
+- Skills implement BYPASS/LIGHT/FULL routing, proportional hardening of approved multi-component specifications, entropy control, lessons, production auditing, and CI procedures.
 - Agents provide read-only pattern discovery and background CI observation.
 - `/everville-workflow:explain-pr-changes` generates review-ready PR Markdown. It does not publish or mutate GitHub state.
 - `SessionStart` supplies conditional workflow context.

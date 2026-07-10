@@ -4,7 +4,7 @@ Claude Code plugins used by the Everville Estate team. The marketplace currently
 
 | Plugin | What it provides | Side effects |
 | --- | --- | --- |
-| `everville-workflow` | BYPASS/LIGHT/FULL routing, production and CI guidance, two agents, `/everville-workflow:explain-pr-changes`, and repository-scoped advisory hooks | A `SessionStart` hook may add workflow context in a verified Everville repository. A `PreToolUse` hook checks matched mutation-capable calls. Some skills call `git` or `gh` when invoked. |
+| `everville-workflow` | BYPASS/LIGHT/FULL routing, proportional hardening of approved multi-component specifications, production and CI guidance, two agents, `/everville-workflow:explain-pr-changes`, and repository-scoped advisory hooks | A `SessionStart` hook may add workflow context in a verified Everville repository. A `PreToolUse` hook checks matched mutation-capable calls. Some skills call `git` or `gh` when invoked. |
 | `everville-handoff` | Create and resume portable cross-machine or cross-agent checkpoints | Writes under `.claude/handoffs/` only when the skill is used. It never commits or pushes a handoff automatically. |
 | `everville-meta` | Marketplace authoring, instruction refactoring, skill judging/stocktaking, and the runtime skill-invocation harness | May scaffold or modify plugin files when explicitly used. The compliance harness can run bounded `claude -p` experiments only after an explicit non-dry-run invocation. Publishing remains a separate, reviewed Git operation. |
 
@@ -19,6 +19,8 @@ See [the current architecture](docs/architecture.md) for component and trust bou
 - **FULL**: the 11-step path for tier-1, structural, migration, auth, financial, aviation, or otherwise high-risk changes.
 
 The hooks are guardrails, not a security boundary. They can add context and block matched Claude Code tool calls, but they do not prove that a skill ran, cover arbitrary external processes, or replace review, permissions, branch protection, CI, or repository policy. Scope installation deliberately.
+
+`everville-spec-hardening` is intentionally narrower than the general workflow. It applies to an existing implementation-bound specification that crosses components or critical operational boundaries, or when explicitly requested. It does not turn brainstorming, routine changes, code review, or prose cleanup into a heavyweight specification process.
 
 ## Requirements and optional tools
 

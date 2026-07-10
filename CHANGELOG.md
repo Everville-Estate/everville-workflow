@@ -2,6 +2,17 @@
 
 This file records marketplace-level releases. Individual component history may be summarized here when multiple plugins change together.
 
+## everville-workflow 0.13.0 - 2026-07-10
+
+### Added
+
+- Add an independently written specification-hardening skill for approved multi-component or high-risk designs, with focused decision-coverage, boundary-review, and delivery references.
+- Add deterministic positive/negative routing contracts, archive-fingerprint exclusions, no-spend compliance scenarios, and cached-package verification for the new skill.
+
+### Security
+
+- Treat the unlicensed reference archive as unknown-rights material: no copied text, attribution claim, bundled source, mandatory agent behavior, or reasoning-transcript persistence is included.
+
 ## everville-workflow 0.12.0 / everville-meta 0.3.0 / everville-handoff 0.4.0 - 2026-07-10
 
 ### Changed
