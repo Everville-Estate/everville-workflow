@@ -11,6 +11,7 @@ This file records marketplace-level releases. Individual component history may b
 - Replace stale onboarding and architecture documents with current platform guidance.
 - Add repository validation, CI, CODEOWNERS, and a review-focused pull request template.
 - Add an isolated three-plugin installation gate that validates the cached consumer packages.
+- Pin current Node 24 GitHub Actions releases by commit SHA so CI has no deprecated-runtime warning or floating action dependency.
 - Recalibrate workflow, entropy, skill-quality, handoff, and plugin-authoring guidance.
 - Move instruction-refactoring and skill-quality/diagnostic tools into `everville-meta` so ordinary workflow installations carry a smaller always-on discovery surface.
 

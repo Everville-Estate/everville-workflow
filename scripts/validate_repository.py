@@ -12,6 +12,9 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 FRONTMATTER_RE = re.compile(r"\A---\n(?P<body>.*?)\n---\n", re.DOTALL)
+WORKFLOW_USES_RE = re.compile(
+    r"^\s*(?:-\s*)?uses:\s*(?P<value>[^#]+?)\s*(?:#.*)?$", re.MULTILINE
+)
 
 
 class ValidationError(Exception):
@@ -145,6 +148,29 @@ def validate_python() -> None:
             fail(f"{path.relative_to(ROOT)}: Python syntax error: {exc}")
 
 
+def unpinned_external_actions(text: str) -> list[str]:
+    issues: list[str] = []
+    for match in WORKFLOW_USES_RE.finditer(text):
+        value = match.group("value").strip().strip("\"'")
+        if value.startswith(("./", "docker://")):
+            continue
+        if "@" not in value:
+            issues.append(value)
+            continue
+        source, ref = value.rsplit("@", 1)
+        if "/" not in source or not re.fullmatch(r"[0-9a-f]{40}", ref):
+            issues.append(value)
+    return issues
+
+
+def validate_workflow_action_pins() -> None:
+    workflows = sorted((ROOT / ".github" / "workflows").glob("*.yml"))
+    workflows += sorted((ROOT / ".github" / "workflows").glob("*.yaml"))
+    for path in workflows:
+        for action in unpinned_external_actions(path.read_text()):
+            fail(f"{display_path(path)}: external action is not SHA-pinned: {action}")
+
+
 def validate_docs_and_policy() -> None:
     active_markdown = [
         path
@@ -189,6 +215,8 @@ def validate_docs_and_policy() -> None:
     judge = ROOT / "plugins/everville-meta/skills/everville-skill-judge/SKILL.md"
     if len(judge.read_text().splitlines()) > 500:
         fail("everville-skill-judge/SKILL.md exceeds its own 500-line quality ceiling")
+
+    validate_workflow_action_pins()
 
 
 def validate_filesystem() -> None:

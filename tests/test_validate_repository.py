@@ -39,5 +39,30 @@ class RepositoryInvariantTests(unittest.TestCase):
         VALIDATOR.validate_python()
 
 
+class WorkflowPinTests(unittest.TestCase):
+    def test_rejects_floating_step_action(self) -> None:
+        text = "steps:\n  - uses: actions/checkout@v7\n"
+        self.assertEqual(
+            VALIDATOR.unpinned_external_actions(text),
+            ["actions/checkout@v7"],
+        )
+
+    def test_rejects_floating_reusable_workflow(self) -> None:
+        text = "jobs:\n  delegate:\n    uses: acme/ci/.github/workflows/check.yml@v1\n"
+        self.assertEqual(
+            VALIDATOR.unpinned_external_actions(text),
+            ["acme/ci/.github/workflows/check.yml@v1"],
+        )
+
+    def test_accepts_pinned_reusable_workflow(self) -> None:
+        sha = "a" * 40
+        text = f"jobs:\n  delegate:\n    uses: acme/ci/.github/workflows/check.yml@{sha}\n"
+        self.assertEqual(VALIDATOR.unpinned_external_actions(text), [])
+
+    def test_accepts_local_action(self) -> None:
+        text = "steps:\n  - uses: ./.github/actions/local-check\n"
+        self.assertEqual(VALIDATOR.unpinned_external_actions(text), [])
+
+
 if __name__ == "__main__":
     unittest.main()
