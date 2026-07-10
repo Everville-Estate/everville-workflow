@@ -12,9 +12,9 @@ Marketplace installs are copied into Claude Code's plugin cache. Editing this ch
 
 ### `everville-workflow`
 
-- Skills implement the TRIVIAL, LIGHT, and FULL workflow paths plus audit, maintenance, documentation, and CI procedures.
+- Skills implement BYPASS/LIGHT/FULL routing, entropy control, lessons, production auditing, and CI procedures.
 - Agents provide read-only pattern discovery and background CI observation.
-- `/explain-pr-changes` generates review-ready PR Markdown. It does not publish or mutate GitHub state.
+- `/everville-workflow:explain-pr-changes` generates review-ready PR Markdown. It does not publish or mutate GitHub state.
 - `SessionStart` supplies conditional workflow context.
 - `PreToolUse` can block matched tool calls before execution.
 
@@ -26,7 +26,7 @@ The handoff skill writes a repository-local, portable checkpoint under `.claude/
 
 ### `everville-meta`
 
-The plugin-forge skill documents and maintains this marketplace. It can scaffold and validate components, but release operations remain normal reviewed Git work. The plugin does not gain runtime instructions from a `CLAUDE.md` placed at its root.
+The plugin-forge skill documents and maintains this marketplace. Instruction refactoring and the skill judge/stocktake/comply tools live here so ordinary workflow users do not pay their discovery cost. These tools can scaffold, validate, or run bounded diagnostics, but release operations remain normal reviewed Git work. The plugin does not gain runtime instructions from a `CLAUDE.md` placed at its root.
 
 ## Context and loading
 
@@ -36,7 +36,7 @@ Project instructions belong in the consuming repository's `CLAUDE.md` or `.claud
 
 ## External dependencies
 
-The core runtime assumes Claude Code, Git, and Python 3. The FULL workflow references the separately installed Superpowers plugin. `gh`, Beads, docs MCPs, Playwright, and PyYAML unlock specific optional paths. Their absence must be reported or handled through the fallbacks documented by each skill; it must not be silently presented as successful execution.
+The core runtime assumes Claude Code, Git, and Python 3. The FULL workflow references the separately installed Superpowers plugin. `gh`, Beads, docs MCPs, and Playwright unlock specific optional paths. The compliance harness uses only the Python standard library. Missing optional tools must be reported or handled through the fallbacks documented by each skill; absence must not be silently presented as successful execution.
 
 ## Release contract
 

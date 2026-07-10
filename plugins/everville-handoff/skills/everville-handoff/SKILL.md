@@ -30,7 +30,8 @@ Use a handoff when work must cross a machine, agent, teammate, or durable reposi
 Run from the repository root:
 
 ```bash
-SLUG=${1:-work}
+VALIDATOR="${CLAUDE_PLUGIN_ROOT}/skills/everville-handoff/scripts/handoff_validator.py"
+SLUG=$(python3 "$VALIDATOR" slug "${1:-work}") || exit 1
 STAMP=$(date +%Y-%m-%d-%H%M%S)
 DIR=.claude/handoffs
 mkdir -p "$DIR"
@@ -80,55 +81,10 @@ Do not paste `env`, `.env`, credential-store output, authenticated URLs, or full
 
 ### 3. Validate once, fail closed
 
-Run the following validator with the real handoff path. It aggregates all findings and exits non-zero if any exist:
+Run the bundled validator with the real handoff path. It requires the safe filename, title, metadata, every template section, and non-placeholder content; it also aggregates path, reference, and common secret-pattern findings. It exits non-zero if any issue exists:
 
 ```bash
-python3 - "$FILE" <<'PY'
-from pathlib import Path
-import re, subprocess, sys
-
-path = Path(sys.argv[1])
-issues = []
-if not path.is_file():
-    issues.append(f'handoff does not exist: {path}')
-    text = ''
-else:
-    text = path.read_text(encoding='utf-8')
-
-for match in re.finditer(r'<[A-Z][A-Z0-9_-]*(?::[A-Z0-9_-]+)?>', text):
-    issues.append(f'placeholder remains: {match.group(0)}')
-
-secret_patterns = {
-    'private key': r'-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----',
-    'AWS access key': r'\bAKIA[0-9A-Z]{16}\b',
-    'GitHub token': r'\b(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})\b',
-    'provider secret': r'\b(?:sk_(?:live|test)_[A-Za-z0-9]{12,}|sk-[A-Za-z0-9_-]{20,})\b',
-    'bearer credential': r'(?i)\bBearer\s+[A-Za-z0-9._~+/=-]{12,}',
-    'credentialed URL': r'(?i)\b[a-z][a-z0-9+.-]*://[^\s/@:]+:[^\s/@]+@',
-    'assigned secret value': r'(?im)^\s*(?:api[_-]?key|password|access[_-]?token|refresh[_-]?token|client[_-]?secret)\s*[:=]\s*(?!<|\[|REDACTED\b|NOT_SET\b)["\x27]?[A-Za-z0-9._~+/=-]{8,}',
-}
-for label, pattern in secret_patterns.items():
-    if re.search(pattern, text):
-        issues.append(f'possible {label}')
-
-if re.search(r'(?i)(?:/Users/[^/\s]+|/home/[^/\s]+|[A-Z]:\\Users\\[^\\\s]+)', text):
-    issues.append('machine-specific home path found; use repository-relative paths')
-
-refs = set(re.findall(r'`((?:\.?/)?(?:[A-Za-z0-9_.@-]+/)+[A-Za-z0-9_.@-]+(?::\d+)?)`', text))
-for ref in sorted(refs):
-    candidate = re.sub(r':\d+$', '', ref).removeprefix('./')
-    if candidate.startswith(('.claude/handoffs/', 'http://', 'https://')):
-        continue
-    if not Path(candidate).exists():
-        issues.append(f'missing referenced file: {ref}')
-
-if issues:
-    print('HANDOFF INVALID')
-    for issue in issues:
-        print(f'- {issue}')
-    raise SystemExit(1)
-print('HANDOFF VALID')
-PY
+python3 "$VALIDATOR" validate "$FILE" --repo-root .
 ```
 
 Review every reported item. Do not finalize, share, or claim success until the validator exits 0. Pattern checks reduce risk but cannot prove a document contains no sensitive information; perform a human-readable diff review too.

@@ -83,6 +83,7 @@ class GateCheckTests(unittest.TestCase):
 
         self.assertEqual(first.returncode, 2)
         self.assertIn("one-time advisory", first.stderr)
+        self.assertIn("BYPASS, LIGHT, or FULL", first.stderr)
         self.assertEqual(retry.returncode, 0)
 
     def test_marker_creation_failure_is_fail_open(self):
@@ -226,6 +227,9 @@ class GateCheckTests(unittest.TestCase):
 
         self.assertEqual(result.returncode, 0)
         self.assertIn("<everville-workflow-gate>", result.stdout)
+        self.assertIn("BYPASS", result.stdout)
+        self.assertIn("LIGHT", result.stdout)
+        self.assertIn("FULL", result.stdout)
 
     def test_common_mutating_bash_is_gated_but_read_only_bash_is_not(self):
         repo = self.make_repo(self.base / "repo")

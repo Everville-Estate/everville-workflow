@@ -1,7 +1,7 @@
 {
   "name": "everville-meta",
-  "version": "0.2.0",
-  "description": "Meta-tooling for the everville-workflow marketplace itself \u2014 scaffold new plugins, bump versions, and understand manifest schemas without leaving the repo.",
+  "version": "0.3.0",
+  "description": "Maintainer tooling for the everville-workflow marketplace: author plugins, refactor instruction files, judge and stocktake skills, and run bounded candidate-skill invocation diagnostics.",
   "author": {
     "name": "Everville Estate PTE LTD",
     "email": "niko@everville.estate",
@@ -15,6 +15,8 @@
     "marketplace",
     "meta",
     "everville",
-    "scaffolding"
+    "scaffolding",
+    "skill-quality",
+    "compliance"
   ]
 }

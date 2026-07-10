@@ -39,7 +39,7 @@ A verdict is worthless without a reason that lets someone act without re-investi
 Every reason must state **(1) the specific defect** and **(2) what covers the same need instead**:
 
 - ❌ "Retire — superseded."
-- ✅ "Retire — its only trigger ('generate PR body') is fully handled by `/explain-pr-changes`, which also grades the existing body; nothing references this skill."
+- ✅ "Retire — its only trigger ('generate PR body') is fully handled by `/everville-workflow:explain-pr-changes`, which also grades the existing body; nothing references this skill."
 - ❌ "Merge — overlaps some-prose-skill."
 - ✅ "Merge → some-prose-skill — both fire on 'write copy'; this one's only unique content is the email-subject-line checklist, which should move into some-prose-skill's quick-checklist."
 

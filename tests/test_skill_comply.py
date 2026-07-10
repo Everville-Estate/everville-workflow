@@ -13,7 +13,7 @@ from unittest import mock
 
 SCRIPT = (
     pathlib.Path(__file__).parents[1]
-    / "plugins/everville-workflow/skills/everville-skill-comply/scripts/skill_comply.py"
+    / "plugins/everville-meta/skills/everville-skill-comply/scripts/skill_comply.py"
 )
 SPEC = importlib.util.spec_from_file_location("skill_comply", SCRIPT)
 assert SPEC and SPEC.loader
@@ -168,6 +168,28 @@ class TraceAndEvaluationTests(unittest.TestCase):
         self.assertEqual(result["classification"], "inconclusive")
         self.assertFalse(result["conclusive"])
 
+    def test_exit_zero_terminal_api_error_is_infrastructure_error(self) -> None:
+        signals = skill_comply.parse_trace_text(
+            json.dumps(
+                {
+                    "type": "result",
+                    "subtype": "success",
+                    "is_error": True,
+                    "api_error_status": 401,
+                    "result": "Invalid API key",
+                    "total_cost_usd": 0,
+                }
+            )
+        )
+        result = skill_comply.classify_result(
+            valid_config()["scenarios"][0],
+            {**signals, "exit": 0, "stderr": "", "timed_out": False, "launch_error": None},
+        )
+        self.assertEqual(result["classification"], "infrastructure_error")
+        self.assertFalse(result["conclusive"])
+        self.assertIn("API status 401", result["error"])
+        self.assertIn("Invalid API key", result["error"])
+
 
 class ExecutionTests(unittest.TestCase):
     def test_build_cmd_loads_candidate_plugin(self) -> None:
@@ -197,6 +219,37 @@ class ExecutionTests(unittest.TestCase):
             self.assertIsNone(result["trace"])
             self.assertEqual(list(pathlib.Path(td).glob("skill-comply-*.jsonl")), [])
             self.assertEqual(run.call_args.kwargs["timeout"], 30)
+
+    def test_dry_run_prints_complete_pre_spend_summary(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            root = pathlib.Path(td)
+            config_path = root / "scenarios.json"
+            config_path.write_text(json.dumps(valid_config()), encoding="utf-8")
+            plugin = root / "candidate"
+            (plugin / ".claude-plugin").mkdir(parents=True)
+            (plugin / ".claude-plugin" / "plugin.json").write_text("{}", encoding="utf-8")
+
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                status = skill_comply.main(
+                    [
+                        str(config_path),
+                        "--plugin-dir",
+                        str(plugin),
+                        "--workdir",
+                        str(root),
+                        "--dry-run",
+                    ]
+                )
+
+            rendered = output.getvalue()
+            self.assertEqual(status, 0)
+            self.assertIn(f"candidate: {plugin.resolve()}", rendered)
+            self.assertIn(f"workdir: {root.resolve()}", rendered)
+            self.assertIn("3 run(s)", rendered)
+            self.assertIn("timeout: 180s", rendered)
+            self.assertIn("budget: $1.25/run", rendered)
+            self.assertIn("worst-case paid total: $3.75", rendered)
 
     @mock.patch.object(skill_comply.subprocess, "run")
     def test_run_can_retain_trace_explicitly(self, run: mock.Mock) -> None:

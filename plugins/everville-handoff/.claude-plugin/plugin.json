@@ -1,7 +1,7 @@
 {
   "name": "everville-handoff",
-  "version": "0.3.1",
-  "description": "Session handoff documents for long-running Everville agent work. Create comprehensive handoffs when context fills, resume from them with staleness checks. Python scripts replaced with native bash + gh + git.",
+  "version": "0.4.0",
+  "description": "Validated repository-local handoffs for explicit cross-machine or cross-agent continuation. Uses portable Git identity, fail-closed content checks, and never commits or shares a handoff automatically.",
   "author": {
     "name": "Everville Estate PTE LTD",
     "email": "niko@everville.estate",

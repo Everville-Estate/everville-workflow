@@ -207,8 +207,8 @@ def pre_tool_use(data: dict) -> int:
 
     sys.stderr.write(
         "everville-workflow one-time advisory gate: before this mutation —\n"
-        "1) Invoke trivial-whitelist and STATE the verdict (trivial / non-trivial).\n"
-        "2) If non-trivial, invoke unified-workflow and select FULL or LIGHT yourself.\n"
+        "1) Invoke trivial-whitelist and STATE its exact verdict: BYPASS, LIGHT, or FULL.\n"
+        "2) For LIGHT or FULL, invoke unified-workflow and follow that track.\n"
         "3) Retry the tool call; this speed-bump fires once per session and repository.\n"
         "This hook covers editor tools and common mutating Bash forms; it is not a shell sandbox "
         "and does not prove that the skills were invoked.\n"

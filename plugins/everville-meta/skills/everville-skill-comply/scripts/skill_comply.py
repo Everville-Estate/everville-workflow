@@ -263,6 +263,9 @@ def parse_trace_text(trace: str) -> dict[str, Any]:
     texts: list[str] = []
     cost = 0.0
     subtype: str | None = None
+    result_is_error = False
+    api_error_status: int | str | None = None
+    result_error = ""
     result_seen = False
     invalid_lines = 0
     for raw_line in trace.splitlines():
@@ -283,6 +286,15 @@ def parse_trace_text(trace: str) -> dict[str, Any]:
             if isinstance(raw_cost, (int, float)) and not isinstance(raw_cost, bool):
                 cost = float(raw_cost)
             subtype = event.get("subtype") if isinstance(event.get("subtype"), str) else None
+            result_is_error = event.get("is_error") is True
+            raw_status = event.get("api_error_status")
+            if isinstance(raw_status, (int, str)) and not isinstance(raw_status, bool):
+                api_error_status = raw_status
+            raw_result = event.get("result")
+            if isinstance(raw_result, str):
+                result_error = raw_result.strip()
+            elif raw_result is not None:
+                result_error = json.dumps(raw_result, sort_keys=True)
         message = event.get("message")
         if not isinstance(message, dict):
             continue
@@ -306,6 +318,9 @@ def parse_trace_text(trace: str) -> dict[str, Any]:
         "text": "\n".join(texts),
         "cost": cost,
         "subtype": subtype,
+        "result_is_error": result_is_error,
+        "api_error_status": api_error_status,
+        "result_error": result_error,
         "result_seen": result_seen,
         "invalid_trace_lines": invalid_lines,
     }
@@ -336,6 +351,13 @@ def classify_result(scenario: dict[str, Any], signals: dict[str, Any]) -> dict[s
         )
     if not signals.get("result_seen"):
         return _classification("infrastructure_error", "trace has no terminal result event")
+    if signals.get("result_is_error") or signals.get("api_error_status") is not None:
+        status = signals.get("api_error_status")
+        detail = signals.get("result_error") or signals.get("stderr") or subtype or "unknown error"
+        status_text = f" (API status {status})" if status is not None else ""
+        return _classification(
+            "infrastructure_error", f"claude terminal result reported an error{status_text}: {detail}"
+        )
     if isinstance(subtype, str) and subtype.startswith("error"):
         detail = signals.get("stderr") or subtype
         return _classification("infrastructure_error", f"claude result error: {detail}")
@@ -497,8 +519,14 @@ def main(argv: list[str] | None = None) -> int:
         print(f"skill_comply: {error}", file=sys.stderr)
         return 2
 
-    if not args.dry_run:
-        worst_case = len(config["scenarios"]) * runs * budget
+    worst_case = len(config["scenarios"]) * runs * budget
+    if args.dry_run:
+        print(
+            f"Dry run: {len(config['scenarios'])} scenario(s) × {runs} run(s); "
+            f"candidate: {plugin_dir}; workdir: {workdir}; timeout: {timeout:g}s; "
+            f"budget: ${budget:.2f}/run; worst-case paid total: ${worst_case:.2f}."
+        )
+    else:
         print(
             f"Running {len(config['scenarios'])} scenario(s) × {runs} run(s) against candidate "
             f"{plugin_dir} at up to ${budget:.2f} each (worst case ${worst_case:.2f}).",
@@ -533,6 +561,9 @@ def main(argv: list[str] | None = None) -> int:
                     **verdict,
                     "cost": signals["cost"],
                     "subtype": signals["subtype"],
+                    "result_is_error": signals["result_is_error"],
+                    "api_error_status": signals["api_error_status"],
+                    "result_error": signals["result_error"],
                     "exit": signals["exit"],
                     "stderr": signals["stderr"],
                     "skills_fired": signals["skills"],

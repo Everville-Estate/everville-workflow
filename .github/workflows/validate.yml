@@ -1,0 +1,49 @@
+name: Validate marketplace
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install pinned Claude Code validator
+        run: npm install --global @anthropic-ai/claude-code@2.1.195
+      - name: Unit tests
+        run: python3 -m unittest discover -s tests -p 'test_*.py'
+      - name: Repository invariants
+        run: python3 scripts/validate_repository.py
+      - name: Claude Code schema validation
+        run: |
+          claude plugin validate . --strict
+          claude plugin validate plugins/everville-workflow --strict
+          claude plugin validate plugins/everville-meta --strict
+          claude plugin validate plugins/everville-handoff --strict
+      - name: Diff hygiene
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [[ -n "$BASE_SHA" ]]; then
+            git diff --check "$BASE_SHA...HEAD"
+          else
+            git diff-tree --check --no-commit-id --root -r HEAD
+          fi

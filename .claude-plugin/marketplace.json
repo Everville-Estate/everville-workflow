@@ -10,8 +10,8 @@
     {
       "name": "everville-workflow",
       "source": "./plugins/everville-workflow",
-      "description": "Two-track development ritual (FULL 11-step / LIGHT 4-step) with SessionStart gate hook, trivial-change whitelist, skill-judge, entropy-reducer, CLAUDE.md refactor, lesson extractor, production-audit, stocktake, comply + codebase-pattern-finder agent + /explain-pr-changes command",
-      "version": "0.11.4",
+      "description": "Repository-scoped BYPASS/LIGHT/FULL development workflow with advisory hooks, entropy/lesson/production/CI skills, two focused agents, and a read-only PR-summary command",
+      "version": "0.12.0",
       "author": {
         "name": "Everville Estate PTE LTD"
       }
@@ -19,8 +19,8 @@
     {
       "name": "everville-meta",
       "source": "./plugins/everville-meta",
-      "description": "Meta-tooling for the everville-workflow marketplace itself: scaffold plugins, bump versions, audit manifests",
-      "version": "0.2.0",
+      "description": "Maintainer tooling for plugin authoring, instruction refactoring, skill judging/stocktaking, and bounded runtime skill-invocation diagnostics",
+      "version": "0.3.0",
       "author": {
         "name": "Everville Estate PTE LTD"
       }
@@ -28,8 +28,8 @@
     {
       "name": "everville-handoff",
       "source": "./plugins/everville-handoff",
-      "description": "Session handoff documents for cross-machine / cross-agent Everville work — create, resume, staleness-check (same-machine resume is covered natively)",
-      "version": "0.3.1",
+      "description": "Validated repository-local handoffs for explicit cross-machine or cross-agent continuation, with portable Git identity and no automatic sharing",
+      "version": "0.4.0",
       "author": {
         "name": "Everville Estate PTE LTD"
       }

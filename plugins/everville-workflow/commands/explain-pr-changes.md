@@ -12,7 +12,7 @@ allowed-tools: Read Grep Glob Bash(git status *) Bash(git branch *) Bash(git rev
   Why/What/How preservation, dependency-ordered changesets, and Gotchas.
 -->
 
-# /explain-pr-changes
+# /everville-workflow:explain-pr-changes
 
 Generate a proposed PR title and body from the current branch's existing diff. This command is read-only.
 

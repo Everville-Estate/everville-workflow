@@ -27,8 +27,8 @@ This is an **invocation diagnostic**, not an enforcement test.
 From the marketplace checkout:
 
 ```bash
-python3 plugins/everville-workflow/skills/everville-skill-comply/scripts/skill_comply.py \
-  plugins/everville-workflow/skills/everville-skill-comply/scenarios/unified-workflow.json \
+python3 plugins/everville-meta/skills/everville-skill-comply/scripts/skill_comply.py \
+  plugins/everville-meta/skills/everville-skill-comply/scenarios/unified-workflow.json \
   --plugin-dir plugins/everville-workflow \
   --workdir /path/to/target-everville-repo \
   --dry-run
