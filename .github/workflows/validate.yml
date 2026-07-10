@@ -38,6 +38,8 @@ jobs:
           claude plugin validate plugins/everville-workflow --strict
           claude plugin validate plugins/everville-meta --strict
           claude plugin validate plugins/everville-handoff --strict
+      - name: Isolated marketplace install
+        run: scripts/validate_marketplace_install.sh
       - name: Diff hygiene
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}

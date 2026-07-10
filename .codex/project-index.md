@@ -15,6 +15,7 @@ Stable navigation map. Current task state lives in `.codex/handoff.md`; stage hi
 - `plugins/*/.claude-plugin/plugin.json` - plugin metadata.
 - `plugins/everville-workflow/hooks/hooks.json` - automatic runtime events.
 - `scripts/validate_repository.py` - deterministic repository validation.
+- `scripts/validate_marketplace_install.sh` - isolated consumer installation and cached-package validation.
 - `.codex/orchestrator.toml` - orchestration and verification contract.
 
 ## Core Subsystems
@@ -42,6 +43,7 @@ Stable navigation map. Current task state lives in `.codex/handoff.md`; stage hi
 - `claude plugin validate plugins/everville-workflow --strict`
 - `claude plugin validate plugins/everville-meta --strict`
 - `claude plugin validate plugins/everville-handoff --strict`
+- `scripts/validate_marketplace_install.sh`
 - `scripts/orchestration/run_process_verification.sh`
 
 ## Conventions And Boundaries

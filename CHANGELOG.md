@@ -10,6 +10,7 @@ This file records marketplace-level releases. Individual component history may b
 - Add deterministic tests for hook and compliance-harness behavior.
 - Replace stale onboarding and architecture documents with current platform guidance.
 - Add repository validation, CI, CODEOWNERS, and a review-focused pull request template.
+- Add an isolated three-plugin installation gate that validates the cached consumer packages.
 - Recalibrate workflow, entropy, skill-quality, handoff, and plugin-authoring guidance.
 - Move instruction-refactoring and skill-quality/diagnostic tools into `everville-meta` so ordinary workflow installations carry a smaller always-on discovery surface.
 

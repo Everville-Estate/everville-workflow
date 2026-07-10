@@ -1,8 +1,10 @@
 # Current State
 
-Local remediation of the 2026-07-10 first-principles audit is complete on `fix/workflow-remediation-0.12.0`. Three implementation streams and one independent review stream are accepted. The local release candidate passes 40 tests, repository invariants, all strict marketplace/plugin validations, compliance dry-runs, skill security scans, and orchestration checks; the verifier reports no remaining local blocker or should-fix finding.
+Local remediation of the 2026-07-10 first-principles audit is complete on `fix/workflow-remediation-0.12.0`. Three implementation streams and one independent review stream are accepted. The local release candidate passes 40 tests, repository invariants, all strict marketplace/plugin validations, an isolated installation of all three cached consumer packages, compliance dry-runs, skill security scans, and orchestration checks; the verifier reports no remaining local blocker or should-fix finding.
 
 Completed stage id: `2026-07-10-workflow-remediation`.
+
+Completed stage id: `2026-07-10-marketplace-consumer-proof`.
 
 Beads is not installed. Task truth is the active Codex goal `019f4ad4-1f14-7041-81e1-eb91c641b137`, this handoff, and the stage artifacts. The goal remains active because remote governance requires new authority.
 

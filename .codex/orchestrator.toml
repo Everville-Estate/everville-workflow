@@ -39,11 +39,13 @@ code_change_commands = [
   "claude plugin validate plugins/everville-workflow --strict",
   "claude plugin validate plugins/everville-meta --strict",
   "claude plugin validate plugins/everville-handoff --strict",
+  "scripts/validate_marketplace_install.sh",
 ]
 stage_close_commands = [
   "python3 -m unittest discover -s tests -p 'test_*.py'",
   "python3 scripts/validate_repository.py",
   "claude plugin validate . --strict",
+  "scripts/validate_marketplace_install.sh",
 ]
 e2e_commands = []
 

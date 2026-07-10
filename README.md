@@ -77,6 +77,7 @@ claude plugin validate . --strict
 claude plugin validate plugins/everville-workflow --strict
 claude plugin validate plugins/everville-meta --strict
 claude plugin validate plugins/everville-handoff --strict
+scripts/validate_marketplace_install.sh
 ```
 
 Run `/hooks` inside Claude Code to inspect loaded hook events and their source. After changing or updating hooks, agents, MCP servers, or other plugin components, run `/reload-plugins` or restart Claude Code. A marketplace install runs from Claude Code's plugin cache, not this checkout.

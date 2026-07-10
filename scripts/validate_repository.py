@@ -174,7 +174,15 @@ def validate_docs_and_policy() -> None:
             fail(f"active documentation contains {label}")
 
     readme = (ROOT / "README.md").read_text()
-    for token in ("BYPASS", "LIGHT", "FULL", "--scope project", "everville-handoff", "everville-meta"):
+    for token in (
+        "BYPASS",
+        "LIGHT",
+        "FULL",
+        "--scope project",
+        "everville-handoff",
+        "everville-meta",
+        "validate_marketplace_install.sh",
+    ):
         if token not in readme:
             fail(f"README.md: missing first-time onboarding token {token!r}")
 

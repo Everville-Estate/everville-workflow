@@ -17,7 +17,7 @@ Claude Code plugin marketplace for the Everville Estate team. The repository shi
 
 ## Canonical verification
 
-Run `scripts/validate_repository.py`, then `claude plugin validate .` and the per-plugin validation commands documented in `.codex/orchestrator.toml`. Hook and harness behavior must have deterministic tests; ad-hoc session evidence is not a substitute.
+Run `scripts/validate_repository.py`, the strict marketplace/per-plugin validation commands, and `scripts/validate_marketplace_install.sh` as documented in `.codex/orchestrator.toml`. Hook and harness behavior must have deterministic tests; ad-hoc session evidence is not a substitute.
 
 ## Authoring rules
 
