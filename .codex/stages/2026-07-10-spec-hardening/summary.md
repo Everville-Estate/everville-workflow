@@ -32,3 +32,4 @@ Beads is unavailable. The active Codex goal, this stage summary, `.codex/handoff
 - Repository validation, current strict Claude Code validation, isolated cached installation, security scanning, process verification, and diff hygiene pass.
 - Fresh-context positive and adjacent-negative behavior pass.
 - Independent skill-judge result: 121/130 (A), Everville Fit 10/10, zero blocker; both should-fix findings corrected before stable commit.
+- Independent integrated review reports zero blockers and zero untriaged should-fix findings; the separate release candidate is published as stacked draft PR `#17` targeting PR `#16`'s branch.
