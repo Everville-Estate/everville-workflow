@@ -29,7 +29,7 @@ depends_on_streams:
   - implementation
 parallel_decision: parallel
 status: accepted
-delivery_method: n/a
+delivery_method: manual integration
 accepted_by_orchestrator: yes
 cleanup_status: cleaned
 cleanup_notes: Read-only execution created no files or external state.
