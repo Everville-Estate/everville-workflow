@@ -1,191 +1,52 @@
-# Plugin Development Workflows
+# Plugin development workflows
 
-## Creating a New Plugin
+## Add or change a plugin
 
-### 1. Create Plugin Directory Structure
+1. Create a dedicated branch from the current reviewed base.
+2. Search existing components and read any candidate upstream source completely.
+3. Specify prerequisites, side effects, state location, cleanup, permissions, and external-write boundaries.
+4. Add the component under the plugin root and register only non-default paths in `plugin.json`.
+5. For an action skill, add `disable-model-invocation: true` when it commits, deploys, publishes, sends, deletes, creates PRs, or changes remote state.
+6. Preserve source attribution below frontmatter and the upstream license under `LICENSES/`.
+7. Bump both the plugin manifest and marketplace entry versions.
 
-```bash
-mkdir -p plugins/plugin-name/.claude-plugin
-mkdir -p plugins/plugin-name/commands
-mkdir -p plugins/plugin-name/skills
-```
-
-### 2. Create Plugin Manifest
-
-Create `plugins/plugin-name/.claude-plugin/plugin.json`:
-
-```json
-{
-  "name": "plugin-name",
-  "version": "0.1.0",
-  "description": "Plugin description",
-  "author": {
-    "name": "Your Name",
-    "email": "your.email@example.com"
-  },
-  "keywords": ["keyword1", "keyword2"]
-}
-```
-
-### 3. Add Plugin to Marketplace
-
-Update `.claude-plugin/marketplace.json` by adding entry to `plugins` array:
-
-```json
-{
-  "name": "plugin-name",
-  "source": "./plugins/plugin-name",
-  "description": "Plugin description",
-  "version": "0.1.0",
-  "keywords": ["keyword1", "keyword2"],
-  "category": "productivity"
-}
-```
-
-### 4. Add Plugin Components
-
-Create commands, skills, agents, or hooks as needed in their respective directories.
-
-## Version Bumping
-
-When making changes to a plugin, update version in **both** locations:
-
-1. `plugins/<plugin-name>/.claude-plugin/plugin.json`
-2. `.claude-plugin/marketplace.json` (matching plugin entry)
-
-**Semantic versioning:**
-
-- **Major (x.0.0)**: Breaking changes
-- **Minor (0.x.0)**: New features, refactoring
-- **Patch (0.0.x)**: Bug fixes, documentation only
-
-## Local Testing Workflow
-
-### Initial Setup
+## Validate
 
 ```bash
-# Add marketplace
-/plugin marketplace add /path/to/marketplace-root
-
-# Install plugin
-/plugin install plugin-name@marketplace-name
+claude plugin validate . --strict
+claude plugin validate plugins/<plugin-name> --strict
+git diff --check
 ```
 
-### Iterative Testing
+Then run component-specific checks:
 
-After making changes to a plugin:
+- parse every changed `SKILL.md` frontmatter block;
+- feed fixture JSON to hook commands and assert exit/output behavior;
+- test missing dependencies and unwritable state directories;
+- inspect any tool permissions, network calls, and secret handling;
+- verify generated files stay in the documented directory;
+- verify no command mutates GitHub or another external system without explicit authorization.
 
-```bash
-# Uninstall
-/plugin uninstall plugin-name@marketplace-name
+First-party validation checks manifests. It does not replace these behavioral tests.
 
-# Reinstall
-/plugin install plugin-name@marketplace-name
+## Test an unpublished checkout
 
-# Restart Claude Code to load changes
-```
+Use a local marketplace source or launch a temporary Claude Code session with the plugin directory. Do not edit files in `~/.claude/plugins/cache`; they are copies, not source.
 
-**Note:** Claude Code caches plugin files, so restart may be required for changes to take effect.
+After changing an in-place skills-directory plugin, skill body changes can be detected during a session. Hooks, agents, MCP/LSP components, and other non-skill changes require `/reload-plugins` or restart. After `claude plugin update`, restart Claude Code.
 
-## Publishing Workflow
+## Release
 
-### 1. Commit Changes
+1. Review the full diff and validation evidence.
+2. Commit on the feature branch.
+3. Open a pull request when authorized; do not push directly to `main`.
+4. Obtain required independent review and CI.
+5. Merge through repository policy.
+6. Update the marketplace and installed plugin.
+7. Restart/reload and verify the installed version and component inventory.
 
-Use conventional commits:
+The forge workflow never grants implicit authority to push, open/edit a PR, merge, publish, or install a plugin for other users. Those are separate actions governed by the user's request and repository policy.
 
-```bash
-git add .
-git commit -m "feat: add new plugin"
-git commit -m "fix: correct plugin manifest"
-git commit -m "docs: update plugin README"
-```
+## Rollback
 
-### 2. Push to Repository
-
-```bash
-git push origin main
-```
-
-### 3. Distribution
-
-**GitHub-hosted marketplace:**
-
-Users add via:
-
-```bash
-/plugin marketplace add owner/repo
-/plugin install plugin-name@marketplace-name
-```
-
-**Local marketplace:**
-
-Users add via absolute path:
-
-```bash
-/plugin marketplace add /path/to/marketplace
-```
-
-## Command Naming Convention
-
-Commands use subdirectory-based namespacing:
-
-- File: `commands/namespace/command.md`
-- Invoked as: `/namespace:command`
-- The `:` represents directory separator `/`
-
-**Examples:**
-
-- `commands/prime/vue.md` → `/prime:vue`
-- `commands/docs/generate.md` → `/docs:generate`
-- `commands/simple.md` → `/simple`
-
-## Common Plugin Patterns
-
-### Framework Plugin
-
-Structure for framework-specific guidance (React, Vue, Nuxt, etc.):
-
-```
-plugins/framework-name/
-├── .claude-plugin/plugin.json
-├── skills/
-│   └── framework-name/
-│       ├── SKILL.md              # Quick reference
-│       └── references/           # Library-specific patterns
-├── commands/
-│   └── prime/                    # Namespace for loading patterns
-│       ├── components.md
-│       └── framework.md
-└── README.md
-```
-
-### Utility Plugin
-
-Structure for tools and utilities:
-
-```
-plugins/utility-name/
-├── .claude-plugin/plugin.json
-├── commands/
-│   ├── action1.md
-│   └── action2.md
-└── README.md
-```
-
-### Domain Plugin
-
-Structure for domain-specific knowledge:
-
-```
-plugins/domain-name/
-├── .claude-plugin/plugin.json
-├── skills/
-│   └── domain-name/
-│       ├── SKILL.md
-│       ├── references/
-│       │   ├── schema.md
-│       │   └── policies.md
-│       └── scripts/
-│           └── automation.py
-└── README.md
-```
+If a release misbehaves, disable the plugin first to stop new sessions from loading it, then revert through a reviewed change or install the last known-good version according to team policy. Persistent data under `${CLAUDE_PLUGIN_DATA}` is not automatically removed by uninstall; use `--keep-data` deliberately and document any cleanup.

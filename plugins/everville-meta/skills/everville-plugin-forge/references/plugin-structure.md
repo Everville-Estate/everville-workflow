@@ -1,103 +1,61 @@
-# Plugin Structure Reference
+# Plugin structure reference
 
-## Directory Hierarchy
+## Default layout
 
-```
+```text
 plugin-name/
 ├── .claude-plugin/
-│   └── plugin.json          # Required: Plugin metadata manifest
-├── commands/                 # Optional: Custom slash commands
-├── agents/                   # Optional: Agent definitions
-├── skills/                   # Optional: Agent Skills
+│   └── plugin.json
+├── skills/
 │   └── skill-name/
-│       ├── SKILL.md         # Required for each skill
-│       ├── scripts/         # Optional: Executable code
-│       ├── references/      # Optional: Documentation
-│       └── assets/          # Optional: Output files
-├── hooks/                    # Optional: Event handlers
+│       ├── SKILL.md
+│       ├── references/
+│       ├── scripts/
+│       └── assets/
+├── commands/
+│   └── legacy-command.md
+├── agents/
+│   └── reviewer.md
+├── hooks/
 │   └── hooks.json
-└── .mcp.json                # Optional: MCP server integrations
+├── .mcp.json
+└── CHANGELOG.md
 ```
 
-## Plugin Manifest (`plugin.json`)
+Only `name` is required in `plugin.json`. Normal metadata includes `version`, `description`, `author`, `homepage`, `repository`, `license`, and `keywords`. Custom component path fields must be relative to the plugin root and begin with `./`.
 
-**Location:** `.claude-plugin/plugin.json` (must be in this directory)
+Do not put components inside `.claude-plugin/`. Do not use a root `CLAUDE.md` as plugin runtime instructions; enabling a plugin does not load it.
 
-**Required fields:**
+## Skills and commands
 
-- `name`: Unique identifier (kebab-case)
+A skill lives at `skills/<command-name>/SKILL.md`. The directory controls its plugin-scoped command name. Frontmatter may include `description`, `disable-model-invocation`, `user-invocable`, `allowed-tools`, `disallowed-tools`, `context`, `agent`, `paths`, and scoped `hooks`.
 
-**Standard metadata:**
+Use `disable-model-invocation: true` for side-effectful or timing-sensitive workflows such as publish, deploy, commit, send, destructive cleanup, remote mutation, or PR creation. A command file under `commands/` is the legacy flat skill format and should follow the same invocation-safety rule.
 
-- `version`: Semantic versioning (e.g., "1.0.0")
-- `description`: Plugin purpose
-- `author`: Object with name, email, url
-- `homepage`: URL
-- `repository`: URL
-- `license`: SPDX identifier
-- `keywords`: Array of search terms
+Skill bodies remain in conversation context after invocation. Keep the main body concise and place detailed material in `references/` for on-demand reading.
 
-**Component paths (optional):**
+## Hooks
 
-- `commands`: Path to commands directory
-- `agents`: Path to agents directory
-- `hooks`: Path to hooks configuration
-- `mcpServers`: Path to MCP configuration
+Default path: `hooks/hooks.json`. Event names are case-sensitive. Common events include:
 
-### Example plugin.json
+- `SessionStart`
+- `UserPromptSubmit`
+- `PreToolUse`
+- `PostToolUse`
+- `PostToolUseFailure`
+- `Stop`
+- `SubagentStop`
+- `SessionEnd`
+- `PreCompact` / `PostCompact`
 
-```json
-{
-  "name": "example-plugin",
-  "version": "1.0.0",
-  "description": "Example plugin for demonstration",
-  "author": {
-    "name": "Plugin Creator",
-    "email": "creator@example.com"
-  },
-  "keywords": ["example", "demo"]
-}
-```
+Use `${CLAUDE_PLUGIN_ROOT}` for bundled files, `${CLAUDE_PLUGIN_DATA}` for persistent state, and `${CLAUDE_PROJECT_DIR}` for the active project. Prefer exec-form hook commands where supported so paths are passed without shell tokenization.
 
-## Component Types
+`PreToolUse` can block a matched call before it runs. `PostToolUse` cannot undo a completed call. `SessionStart` adds context but cannot block session startup.
 
-### Commands
+## State and dependencies
 
-**Location:** `commands/` directory
-**Format:** Markdown files with frontmatter
-**Naming:** Subdirectories create namespaces via `:`
+Marketplace installs are copied into a versioned cache. Treat `${CLAUDE_PLUGIN_ROOT}` as read-only and ephemeral. Store durable plugin-owned state or installed runtime dependencies under `${CLAUDE_PLUGIN_DATA}`. Document executable/package prerequisites and fail clearly when they are unavailable.
 
-```
-commands/
-├── simple.md              # Invoked as /simple
-└── namespace/
-    └── command.md         # Invoked as /namespace:command
-```
+## Validation boundary
 
-### Agents
-
-**Location:** `agents/` directory
-**Format:** Markdown files describing agent capabilities
-
-### Skills
-
-**Location:** `skills/` directory
-**Format:** Subdirectories with `SKILL.md` file
-**Structure:** See skills documentation
-
-### Hooks
-
-**Location:** `hooks/hooks.json` or path specified in manifest
-**Events:** PreToolUse, PostToolUse, UserPromptSubmit, Notification, Stop, SubagentStop, SessionStart, SessionEnd, PreCompact
-
-### MCP Servers
-
-**Location:** `.mcp.json` at plugin root
-**Purpose:** External tool integrations
-
-## Path Requirements
-
-- All paths relative to plugin root
-- Start with `./` for custom paths
-- Use `${CLAUDE_PLUGIN_ROOT}` for dynamic resolution in hooks/MCP
-- Components must be at plugin root, not inside `.claude-plugin/`
+`claude plugin validate <path> --strict` validates manifest schema and makes warnings fatal. It does not execute hooks, parse application semantics, install packages, exercise network calls, or prove side-effect safety. Add component-specific tests for those claims.

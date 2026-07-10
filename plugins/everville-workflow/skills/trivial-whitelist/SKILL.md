@@ -1,66 +1,71 @@
 ---
 name: trivial-whitelist
-description: Use before starting any change to decide whether the unified-workflow 11-step ritual is required. Returns a clear verdict — trivial (skip ritual) or non-trivial (full ritual). Hard list; no fuzzy judgment.
+description: Use before any Everville repository change to route it deterministically to BYPASS, LIGHT, or FULL. BYPASS is a hard whitelist for non-behavioral edits; LIGHT handles ordinary non-trivial code, UI, config, dependency, and agent-instruction changes; FULL handles critical or structural work such as auth, migrations/RLS, payments/webhooks, destructive data operations, cross-cutting refactors, and critical surfaces. Returns one verdict with the matching rule.
 ---
 
-# Trivial Whitelist — Ritual Bypass Rules
+# Trivial Whitelist — Track Router
 
-Consult this skill before any change. If the change matches an item on the whitelist below, skip the `unified-workflow` ritual and make the edit directly. Otherwise, follow the full 11 steps.
+Consult this skill before changing an Everville repository. Return exactly one verdict and cite the matching rule:
 
-## Whitelisted change types (skip ritual)
+- **BYPASS** — direct edit plus proportionate verification; do not invoke unified-workflow.
+- **LIGHT** — invoke unified-workflow and use its four-phase track.
+- **FULL** — invoke unified-workflow and use its 11-step track.
 
-1. **Typo / comment-only fixes** — no executable code change.
-2. **Formatting-only** — output of `prettier --write`, `eslint --fix`, `gofmt`, `rustfmt`, etc. No logic change.
-3. **Dependency version bumps without API change** — patch/minor bumps where changelog confirms no breaking API. Major bumps always require the ritual.
-4. **Doc-only edits** — any file under `docs/**` or ending in `.md`, except `CLAUDE.md` which governs AI behavior (treat as code).
-5. **README badge updates** — status badges, shields.io URLs, coverage percent.
-6. **`.gitignore` / `.vercelignore` / `.dockerignore` additions** — new ignore patterns. Removals require the ritual.
-7. **Lockfile regeneration** — `npm install` / `yarn` / `pnpm` / `uv lock` outputs, committed alone.
+Apply the first matching section below. Do not collapse every non-trivial change into FULL.
 
-## Not trivial (always run full ritual)
+## 1. FULL triggers
 
-Anything involving:
-- Business logic, algorithms, data transformations
-- Database schema / migrations / RLS policies
-- API routes / server actions / edge functions
-- UI components (even "small" tweaks — user-visible = ritual)
-- Auth flows / session handling / cookies
-- Config files that affect runtime (`next.config.js`, `vercel.json`, `.env.example`, etc.)
-- `CLAUDE.md` at any level
-- Any `SKILL.md`, agent definition, or slash-command file — these govern agent behavior exactly like CLAUDE.md, "doc-only" does not apply
-- Hooks in `.claude/settings.json`
-- Anything the user explicitly flagged as critical (e.g., balicopter aviation code)
+Return **FULL** when any condition holds:
 
-## Usage pattern
+- Critical surface: aviation, financial, investor-facing, or explicitly Tier 1.
+- Database schema, migration, RLS, destructive/backfill data operation.
+- Auth, session, permissions, secrets, payments, webhooks, or durable jobs.
+- Cross-cutting refactor or runtime behavior spanning multiple subsystems.
+- Agent hooks or guardrails whose failure/bypass affects many repositories or sessions.
+- The user explicitly requests the FULL track.
 
+## 2. BYPASS whitelist
+
+If no FULL trigger applies, return **BYPASS** only for these isolated changes:
+
+1. Typo or comment-only correction with no executable/instruction behavior change.
+2. Formatting-only output from an established formatter, committed without logic changes.
+3. Patch/minor dependency bump whose changelog or release notes confirm no relevant API/behavior change.
+4. Explanatory docs/README edits that do not change a decision, contract, runbook, generated interface, or agent instruction.
+5. README badge/URL/coverage-number maintenance.
+6. Additive ignore patterns in `.gitignore`, `.vercelignore`, or `.dockerignore`; removals are not BYPASS.
+7. Lockfile regeneration committed alone after the originating dependency operation is already approved.
+
+BYPASS still requires evidence appropriate to the edit: inspect the diff and run a cheap relevant check when one exists. It means “no workflow track,” not “no verification.”
+
+## 3. LIGHT default
+
+Return **LIGHT** for everything else non-trivial, including:
+
+- Ordinary business logic, API routes/server actions, algorithms, and data transformations without a FULL trigger.
+- UI components, styling, copy, or interaction changes.
+- Runtime config such as `next.config.*`, `vercel.json`, or `.env.example` without secrets/permission changes.
+- `CLAUDE.md`, `AGENTS.md`, `SKILL.md`, agent definitions, or slash commands that change agent behavior but are not cross-cutting hooks/guardrails.
+- ADR/decision-content edits.
+- Major dependency bumps, or patch/minor bumps whose compatibility cannot be verified, unless discovered impact upgrades them to FULL.
+- Mixed formatting plus any behavior line.
+
+If LIGHT work later exposes a FULL trigger, upgrade in place under unified-workflow.
+
+## Examples
+
+```text
+README spelling only                              -> BYPASS (rule 1)
+Verified patch bump with no relevant API change  -> BYPASS (rule 3)
+Hero headline or button styling                  -> LIGHT
+Small non-auth server action                     -> LIGHT
+SKILL.md trigger wording                         -> LIGHT
+PreToolUse enforcement hook                      -> FULL
+RLS policy or payment webhook                    -> FULL
 ```
-User: "fix typo in README"
-AI: [consults trivial-whitelist] → item #4 (doc-only) → direct edit, no ritual
 
-User: "bump next from 16.2.1 to 16.2.2"
-AI: [consults trivial-whitelist] → item #3, check changelog → patch bump, no API change → direct edit, no ritual
+## Project extensions
 
-User: "tweak the hero headline on the homepage"
-AI: [consults trivial-whitelist] → not on list (UI change) → full ritual: epic, brainstorm, plan, ...
-```
+A project may add BYPASS cases through an explicit `trivial_whitelist_extra` section in its root instructions. Extensions may add narrow generated or mechanical paths, but cannot downgrade a FULL trigger. Cite the exact extension when using it.
 
-## Edge cases — default to the ritual
-
-If any of these apply, treat the change as non-trivial and run the full ritual — don't stop to ask, and don't talk yourself into the trivial path:
-- Change is mostly formatting but includes one logic line
-- Doc edit in `CLAUDE.md`, a `SKILL.md`, or ADR/decision content (ADRs live in the everville-core KB — `ev_kb_list type=decision`)
-- Dependency bump crosses major version
-
-If a project-specific `trivial_whitelist_extra` list (set in `./CLAUDE.md`) covers the change, the trivial path applies. Ask the user only when the verdict turns on information you don't have (e.g. whether a changelog entry is actually breaking for this codebase).
-
-## Per-project extensions
-
-Projects can add to (never remove from) this whitelist via `trivial_whitelist_extra` in `./CLAUDE.md`:
-
-```markdown
-## Trivial whitelist extensions
-- airtable.tables/*.json schema sync (auto-generated from Airtable)
-- supabase/functions/_shared/types.ts (generated)
-```
-
-Extensions land during `/bootstrap-project` (when `everville-bootstrap` is installed).
+Ask the user only when the verdict depends on unavailable information that cannot be obtained safely, such as whether a dependency release changes an API used by the project. Otherwise inspect the repository and choose deterministically.
