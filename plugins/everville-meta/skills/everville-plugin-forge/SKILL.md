@@ -1,199 +1,129 @@
 ---
 name: everville-plugin-forge
-description: Create and manage Claude Code plugins in the everville-workflow marketplace. Use when scaffolding a new plugin, adding components (commands, skills, agents, hooks) to an existing plugin, bumping plugin versions, scouting whether a skill already exists before creating one, or auditing/linting plugin.json / marketplace.json / SKILL.md frontmatter before release.
+description: Create and maintain Claude Code plugins in the everville-workflow marketplace. Use for scaffolding components, choosing safe skill invocation controls, auditing dependencies and side effects, synchronizing versions, validating manifests, or preparing a reviewed release branch.
 ---
 
 <!--
   Adapted from softaworks/agent-toolkit (plugin-forge) — MIT licensed.
   See LICENSES/softaworks-MIT.txt for the original license text.
-  Everville modifications: renamed to everville-plugin-forge; replaced Python
-  scaffolding scripts (create_plugin.py / bump_version.py) with native
-  `claude plugin` CLI commands + short bash recipes; wired to the specific
-  everville-workflow marketplace layout.
+  Everville modifications: marketplace-specific layout, current Claude Code
+  component contracts, side-effect controls, and reviewed release workflow.
 -->
 
 # Everville Plugin Forge
 
-Build and maintain plugins inside the `Everville-Estate/everville-workflow` marketplace. Covers the manifest schemas, the directory layout, and the workflows for adding, updating, testing, and releasing plugins.
+Build and maintain plugins in `Everville-Estate/everville-workflow` without relying on undocumented loading behavior.
 
-## When to Use
+## Runtime contract
 
-- Creating a new plugin under `plugins/<name>/`
-- Adding or modifying components (commands, skills, agents, hooks, MCP servers)
-- Bumping `version` in both `plugin.json` and `marketplace.json` before release
-- Auditing manifests before `claude plugin validate`
-- Vendoring an external MIT-licensed skill (add attribution header + `LICENSES/<source>-MIT.txt`)
+- Plugin components live at the plugin root: `skills/`, `commands/`, `agents/`, `hooks/hooks.json`, `.mcp.json`, and optional manifest-declared component paths.
+- `.claude-plugin/plugin.json` contains metadata; component directories are its siblings, never children of `.claude-plugin/`.
+- A plugin-root `CLAUDE.md` is **not** loaded because the plugin is enabled. Put runtime guidance in a skill, hook context, agent, command, or in the consuming project's `CLAUDE.md`/`.claude/rules`.
+- Hook event names are case-sensitive Claude Code lifecycle names, including `SessionStart`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `Stop`, `SubagentStop`, `SessionEnd`, and `PreCompact`.
+- Use `${CLAUDE_PLUGIN_ROOT}` for bundled read-only files and `${CLAUDE_PLUGIN_DATA}` for state or dependencies that must survive plugin updates. Marketplace cache directories are versioned and ephemeral.
 
-## Marketplace Layout
+## Before creating anything
 
-```
-everville-workflow/
-├── .claude-plugin/
-│   └── marketplace.json              # registers every plugin
-├── LICENSES/                          # third-party attributions
-│   └── softaworks-MIT.txt
-└── plugins/
-    └── <plugin-name>/
-        ├── .claude-plugin/plugin.json
-        ├── CLAUDE.md                  # plugin-level rules (loaded on enable)
-        ├── skills/<name>/SKILL.md
-        ├── skills/<name>/references/
-        ├── agents/<name>.md
-        ├── commands/<name>.md
-        └── hooks/hooks.json
-```
+1. Search shipped, project, and installed skills with `rg`, then check Everville knowledge and sibling marketplaces.
+2. Read any external candidate completely, including scripts, hooks, tool permissions, network calls, credential access, and license.
+3. Prefer extending or composing an existing skill. Use `everville-skill-stocktake` when overlap is unclear.
+4. Define the component's inputs, outputs, dependencies, side effects, and failure behavior before scaffolding.
 
-## Workflows
+## Scaffold
 
-### 0. Scout before you create
-
-The cheapest skill is the one you don't write. Before scaffolding anything, check whether the need is already met:
-
-```bash
-# Local marketplace + installed skills
-grep -rl -i "<the capability>" plugins/*/skills ~/.claude/skills 2>/dev/null
-```
-
-Also check the team's other surfaces (the `everville-core` KB, sibling marketplaces) and, for a genuinely new capability, public skill sources. If a match exists, extend or compose with it instead of duplicating — run `everville-skill-stocktake` if you suspect the new idea overlaps something already shipped. Only scaffold when nothing covers the need.
-
-**Vetting an external match before adopting it:** read its SKILL.md in full for surprises — shell commands it runs, network calls, credential access. Copy it to a branch and diff against what you'd have written before trusting it. Never wire an unread external skill into the workflow.
-
-### 1. Scaffold a new plugin
+Create a marketplace plugin under `plugins/`; `claude plugin init` instead creates a skills-directory plugin under the user's Claude configuration and is not the default workflow for this repository.
 
 ```bash
 NAME=my-plugin
-mkdir -p plugins/$NAME/.claude-plugin plugins/$NAME/skills plugins/$NAME/commands plugins/$NAME/agents
-
-cat > plugins/$NAME/.claude-plugin/plugin.json <<JSON
-{
-  "name": "$NAME",
-  "version": "0.1.0",
-  "description": "...",
-  "author": {
-    "name": "Everville Estate PTE LTD",
-    "email": "niko@everville.estate",
-    "url": "https://github.com/Everville-Estate"
-  },
-  "homepage": "https://github.com/Everville-Estate/everville-workflow",
-  "repository": "https://github.com/Everville-Estate/everville-workflow",
-  "license": "MIT",
-  "keywords": ["everville"]
-}
-JSON
+mkdir -p "plugins/$NAME/.claude-plugin" "plugins/$NAME/skills"
 ```
 
-Then register it in `.claude-plugin/marketplace.json`:
+Create `plugins/$NAME/.claude-plugin/plugin.json` with at least a stable kebab-case `name`, and normally `version`, `description`, author, repository, license, and keywords. Register the relative source in `.claude-plugin/marketplace.json`.
 
-```json
-{
-  "name": "my-plugin",
-  "source": "./plugins/my-plugin",
-  "description": "...",
-  "version": "0.1.0",
-  "author": { "name": "Everville Estate PTE LTD" }
-}
-```
+Do not add `CLAUDE.md` as a runtime mechanism. A human changelog may live at `CHANGELOG.md`; plugin-specific operating guidance belongs in a component that Claude Code actually loads.
 
-### 2. Validate before pushing
+## Choose invocation and side-effect boundaries
+
+For every skill or command, classify it:
+
+- **Reference/procedure with no material side effect:** model invocation may remain enabled.
+- **Commit, deploy, publish, send, delete, create PR, mutate remote state, or other timing-sensitive action:** add `disable-model-invocation: true`. The user must invoke it explicitly.
+- **Background knowledge not meaningful as a slash command:** use `user-invocable: false`.
+
+Even explicitly invoked skills must distinguish preparation from publication. Generate an artifact first, show the proposed mutation, and require explicit authorization for external writes unless the user's invocation unambiguously requested that exact action.
+
+Declare:
+
+- required executables, runtimes, packages, environment variable **names**, and supported platforms;
+- files/directories written and whether they persist across updates;
+- network services and authentication scopes used;
+- cleanup and rollback behavior;
+- whether absence of a dependency is a hard failure or has a documented fallback.
+
+Never print secret values. Never install dependencies into `${CLAUDE_PLUGIN_ROOT}` at runtime; use `${CLAUDE_PLUGIN_DATA}` when persistent installation is genuinely required.
+
+## Component summary
+
+| Component | Default location | Important contract |
+| --- | --- | --- |
+| Skill | `skills/<directory>/SKILL.md` | Frontmatter starts at byte 1; directory controls command name; body loads when invoked |
+| Command | `commands/<name>.md` | Legacy flat skill format; use skill frontmatter controls for side effects |
+| Agent | `agents/<name>.md` | Declare model/tools deliberately; plugin agents cannot ship permission mode or MCP servers |
+| Hook | `hooks/hooks.json` | Exact event and matcher names; use exec form or quote path placeholders |
+| MCP | `.mcp.json` | Declare server, args, env names, and dependency lifecycle |
+
+See `references/plugin-structure.md` for supported paths and `references/marketplace-schema.md` for catalog entries.
+
+## Validate
+
+Run first-party validation from the marketplace root:
 
 ```bash
-claude plugin validate plugins/<name>           # plugin manifest
-claude plugin validate .                         # marketplace manifest
+claude plugin validate . --strict
+claude plugin validate "plugins/$NAME" --strict
 ```
 
-Both must pass before commit. Warnings on SKILL.md frontmatter usually mean the YAML block isn't the very first thing in the file — never put HTML comments or blank lines above `---`.
+Exact semantics:
 
-`claude plugin validate` checks manifest structure but does not parse every SKILL.md's YAML. Run this mechanical lint too — it catches a malformed frontmatter block (bad indentation, missing `name`/`description`, a stray tab) that the model wouldn't spot by eye:
+- `claude plugin validate <path>` validates the plugin or marketplace manifest and reports unrecognized fields as warnings.
+- Warnings do not prevent normal validation or loading. `--strict` turns warnings into failures and is the release/CI mode.
+- Wrong field types and structurally invalid manifests fail validation.
+- Validation does not prove scripts work, dependencies exist, hooks behave safely, every referenced path is portable, or every skill's behavior matches its prose. Test those separately.
 
-```bash
-python3 - <<'PY'
-import glob, yaml, sys
-bad = 0
-for f in glob.glob('plugins/**/SKILL.md', recursive=True):
-    src = open(f).read()
-    if not src.startswith('---'):
-        print(f"FAIL {f}: frontmatter must be the first thing in the file"); bad += 1; continue
-    try:
-        fm = yaml.safe_load(src.split('---', 2)[1])
-    except yaml.YAMLError as e:
-        print(f"FAIL {f}: invalid YAML — {e}"); bad += 1; continue
-    for key in ('name', 'description'):
-        if not fm.get(key):
-            print(f"FAIL {f}: missing '{key}'"); bad += 1
-print('OK' if not bad else f'{bad} problem(s)'); sys.exit(1 if bad else 0)
-PY
-```
+Also run repository tests, parse every changed frontmatter block, exercise hook fixtures, and use `git diff --check`. PyYAML may be used for local linting only if declared as a development dependency; do not make an undeclared package a hidden release prerequisite.
 
-### 3. Bump version
+## Version and test locally
 
-Version lives in **two** places and both must match:
+Keep versions synchronized between:
 
-1. `plugins/<name>/.claude-plugin/plugin.json` → `version`
-2. `.claude-plugin/marketplace.json` → the matching `plugins[]` entry's `version`
+1. `plugins/<name>/.claude-plugin/plugin.json`
+2. the matching entry in `.claude-plugin/marketplace.json`
 
-Semver:
-- **major** — breaking change (skill renamed, argument-hint changed, hook signature changed)
-- **minor** — added component, new functionality, adapted upstream source
-- **patch** — doc fix, description tweak, inline typo
+Use semantic versioning: breaking contract change = major, new capability = minor, compatible fix/docs = patch.
 
-### 4. Refresh local cache
-
-Claude Code caches by version. After pushing a new version:
+Marketplace installs run from Claude Code's cache. After a released version is available:
 
 ```bash
 claude plugin marketplace update everville-workflow
-claude plugin update <plugin-name>@everville-workflow
+claude plugin update <plugin-name>@everville-workflow --scope <user|project|local>
 ```
 
-Verify the cache has the new version:
+Restart is required after `plugin update`. For in-place skills-directory plugins, `SKILL.md` edits can be detected live, while hooks, agents, MCP/LSP components, and other non-skill changes require `/reload-plugins` or restart. A marketplace cache is not a development write target; test an unpublished checkout with a local marketplace or a temporary `--plugin-dir` session.
 
-```bash
-ls ~/.claude/plugins/cache/everville-workflow/<plugin-name>/
-```
+## Release through review
 
-### 5. Vendor an external skill
+1. Work on a dedicated branch.
+2. Preserve attribution and licenses for adapted work.
+3. Update both version declarations and release notes when appropriate.
+4. Run strict manifest validation and behavioral tests.
+5. Review the diff for new dependencies, permissions, hooks, network calls, persistent writes, and secrets.
+6. Commit intentionally and open a pull request only when authorized.
+7. Obtain required independent review and CI evidence before merge.
 
-When adapting an MIT-licensed skill from another marketplace:
+Never push directly to `main`. This skill prepares changes; it does not grant authority to push, merge, publish, update a marketplace, or mutate a remote repository.
 
-1. Copy source to `plugins/<plugin>/skills/<renamed>/SKILL.md`
-2. Add a **new** frontmatter block with the Everville name + description (do NOT keep the upstream `name`)
-3. Add an HTML comment *below* the frontmatter attributing the source
-4. Copy the upstream `LICENSE` to `LICENSES/<source>-MIT.txt` (once per source, shared across all adopted items)
-5. Run `claude plugin validate plugins/<plugin>` — frontmatter must still be parsed correctly
+## References
 
-## Component Formats
-
-| Component | Location | Format |
-|-----------|----------|--------|
-| Commands | `commands/<name>.md` | YAML frontmatter (`description`, `argument-hint`) + markdown body |
-| Skills | `skills/<name>/SKILL.md` | YAML frontmatter (`name`, `description`) + markdown body; optional `references/` directory |
-| Agents | `agents/<name>.md` | YAML frontmatter (`name`, `description`, `tools`, `model`) + markdown body |
-| Hooks | `hooks/hooks.json` | Object keyed by event name (`session_start`, `before_tool_use`, etc.) |
-| MCP Servers | `.mcp.json` at plugin root | Standard MCP server config |
-
-## Command Naming
-
-Commands can namespace via subdirectory:
-
-- `commands/foo.md` → `/foo`
-- `commands/build/sync.md` → `/build:sync`
-
-## Git Hygiene
-
-Use the standard Claude Code commit trailer:
-
-```
-<conventional commit message>
-
-Co-Authored-By: Claude <noreply@anthropic.com>
-```
-
-(The model in use sets its own co-author name under `noreply@anthropic.com`. The old Happy-engineering trailer block is retired.)
-
-## Reference Docs
-
-| Reference | Content |
-|-----------|---------|
-| `references/plugin-structure.md` | Directory layout, manifest schema, component formats |
-| `references/marketplace-schema.md` | Marketplace format, plugin entries, distribution |
-| `references/workflows.md` | Step-by-step patterns for adding, updating, testing, publishing |
+- `references/plugin-structure.md` — component layout and loading rules
+- `references/marketplace-schema.md` — marketplace entry shape and scopes
+- `references/workflows.md` — reviewed create, test, update, and release flow

@@ -1,173 +1,123 @@
 ---
-description: Generate a comprehensive PR summary from the current branch's diff against origin/main and create or update the PR body with it.
+description: Generate review-ready PR title/body Markdown from the current branch diff without creating a branch, opening or editing a PR, pushing, or changing GitHub state.
 argument-hint: "[issue-number-to-close]"
+disable-model-invocation: true
+allowed-tools: Read Grep Glob Bash(git status *) Bash(git branch *) Bash(git rev-parse *) Bash(git log *) Bash(git diff *) Bash(gh pr view *)
 ---
 
 <!--
   Adapted from softaworks/agent-toolkit (explain-pr-changes) — MIT licensed.
   See LICENSES/softaworks-MIT.txt for the original license text.
-  Everville modifications: removed "Code-Sage" persona framing; kept process
-  structure, mermaid diagram guidance, and triage rules; added Why/What/How
-  grading of any existing body; output follows Everville PR conventions
-  (Claude Co-Authored-By, `Close $ARGUMENTS`). 0.9.0: absorbed /review-self —
-  changesets are now dependency-ordered and the template gained a Gotchas
-  section; the truncated output template was completed.
+  Everville modifications: generation-only trust boundary, explicit invocation,
+  Why/What/How preservation, dependency-ordered changesets, and Gotchas.
 -->
 
 # /explain-pr-changes
 
-Generate a comprehensive markdown PR summary from the diff between `origin/main` and the current branch, then create or update the PR with that body.
+Generate a proposed PR title and body from the current branch's existing diff. This command is read-only.
 
-## 1. The Goal
+## Hard boundary
 
-Given a pull request (title, description, and git diff), produce a clear, concise, insightful markdown summary that makes review faster. Explain the changes textually and visualize impact with mermaid diagrams where useful.
+This invocation authorizes analysis and Markdown generation only. It does **not** authorize any of the following:
 
-If a PR is already open for this branch, update it. Otherwise create one.
+- creating or switching branches;
+- committing, pushing, or fetching;
+- creating a pull request;
+- editing a PR body or title;
+- posting comments/reviews;
+- merging, closing, or otherwise changing GitHub state.
 
-## 2. The Input
+Never run `gh pr create`, `gh pr edit`, `gh api` with a mutating method, `git push`, or branch-creation commands from this skill. After showing the proposal, the user may separately request publication. Treat that as a new external-write action: confirm the exact target PR and preserve any human-authored content before mutation.
 
-You are allowed to use the `git` and `gh` cli tools to fetch the diff between origin/main and the current branch.
-Use this to generate your summary.
+## Inputs
 
-Make sure you are not on the main branch. If so, then start by creating a
-dedicated new one.
+1. Confirm this is a Git worktree and record the current branch and HEAD.
+2. If the current branch is `main`, has no commits/diff against `origin/main`, or `origin/main` is unavailable, report the condition and stop. Do not create a branch or fetch automatically.
+3. Inspect `git diff --stat origin/main...HEAD`, `git diff origin/main...HEAD`, and relevant commit messages.
+4. If `gh` is installed and authenticated, `gh pr view --json number,title,body,url,baseRefName,headRefName` may be used read-only to understand an existing PR. If it is unavailable, continue from local Git evidence and state that existing PR content was not checked.
+5. If the local `origin/main` reference may be stale, say so in the generated report; do not silently mutate refs.
 
-## 3. The Process: A Step-by-Step Guide
+## Preserve useful existing content
 
-To generate the final output, you must follow these steps in order:
+When an existing PR body is available, grade it on:
 
-### Step 0: Grade any existing body
+- **Why** — the problem, risk, or goal;
+- **What** — the actual changes;
+- **How** — approach and non-obvious decisions.
 
-If a PR is already open, read its current body and grade it against the **Why / What / How** test before you regenerate anything:
+Retain accurate human-authored context and make the smallest additions needed. Regenerate from scratch only when no usable body exists. Never overwrite an existing body as part of this command.
 
-- **Why** — does it state the problem or goal the change serves?
-- **What** — does it summarize what actually changed?
-- **How** — does it explain the approach or any non-obvious decisions?
+## Analyze
 
-If the existing body already covers all three well, make minimal edits rather than overwriting it — respect work a human or prior agent put in. If one or more is missing or thin, fill those gaps. Only regenerate from scratch when there's no usable body. Note which of the three were missing in your report to the user.
+Understand the intent and group files into dependency-ordered changesets: foundations first, implementation next, integration/UI after that, then tests and configuration. For each group identify:
 
-### Step 1: Holistic Analysis
+- affected files;
+- behavior and contract changes;
+- exported function signature, schema, global data, migration, or public API effects;
+- dependencies and what the group enables;
+- verification added or run;
+- reviewer gotchas.
 
-Begin by thoroughly analyzing the diff. Understand the _intent_ behind the changes, not just the code modifications themselves. Identify the core problem being solved or the feature being added.
+Triage each changeset:
 
-### Step 2: High-Level Summary
+- `NEEDS_REVIEW`: any logic, behavior, data, configuration semantics, or public contract changes.
+- `APPROVED`: only non-behavioral typo, formatting, comment, or equivalent mechanical edits.
 
-Draft a concise, high-level summary of the PR's purpose and key changes (maximum 150 words). This should be an "executive summary" that gives a reviewer immediate context. Place this at the very top of your output.
+When uncertain, use `NEEDS_REVIEW`.
 
-If an issue number is given in $ARGUMENTS, add `Close #<number>` to the summary — the `#` prefix is required for GitHub auto-close to work.
+## Diagrams
 
-### Step 3: Visualizing the Architecture (Mermaid Diagrams) - Optional
+Include a small Mermaid diagram only when it materially clarifies changed data flow, call hierarchy, state transitions, or relationships among three or more components. Do not diagram the entire system.
 
-This is an optional step, which you will perform only if necessary. Your goal is to create diagrams that clarify complex changes.
+## Output
 
-**Generate a Mermaid diagram if the PR introduces or significantly alters:**
-
-- The flow of data between components, functions, or services.
-- The call hierarchy between multiple functions or methods.
-- A state machine or a process with distinct steps.
-- The relationship between new or modified global data structures.
-
-**Guidelines for Diagrams:**
-
-- Choose the most appropriate diagram type (`flowchart`, `sequenceDiagram`, `stateDiagram-v2`, etc.).
-- Keep diagrams focused and clean. Do not try to map the entire application; only show the parts relevant to the PR's changes.
-- Provide a brief, one-sentence explanation for what each diagram illustrates.
-- If no changes warrant a diagram, you may omit this section entirely.
-- Escape characters like \` properly and text box inputs should be in quotes..
-
-### Step 4: Detailed Changeset Breakdown
-
-Analyze the full file by file and group related changes into logical "changesets". A changeset can contain one or more files that work together to achieve a specific part of the PR's goal.
-
-**Order the changesets by dependency**, so a reviewer can read top-to-bottom: foundation first (types, schemas, migrations), then implementation (the code that uses the foundation), then integration/UI, with tests and config last. Note what each changeset depends on and what it enables.
-
-For **each changeset**, you must provide the following:
-
-1.  **A meaningful title** for the group of changes (e.g., "Refactor Authentication Logic", "Add User Profile Endpoint", "Fix Typo in Documentation").
-2.  **A list of files affected** in this changeset.
-3.  **A bulleted summary** of the changes. Be specific.
-    - **Crucially**, your summary must include a note about alterations to the signatures of exported functions, modifications to global data structures, or any changes that affect the external API or public behavior of the code.
-4.  **A triage status** based on the following strict criteria:
-
-    - `NEEDS_REVIEW`: The diff involves any modifications to logic or functionality. This includes changes to control flow, algorithms, variable assignments, function calls, or public-facing contracts that might impact behavior.
-    - `APPROVED`: The diff _only_ contains trivial changes that do not affect code logic, such as fixing typos in comments, code formatting, or renaming a private variable for clarity.
-
-    **When in doubt, always triage as `NEEDS_REVIEW`.**
-
-## 4. The Output Template
-
-You must generate a single markdown file. Your final output must strictly adhere to the following template. Do not add any conversational text or explanations outside of this structure.
-
-Once the output is generated, you are charged to create a PR with the output as the body. If the PR is already open, you will update it. You will also update its title.
+Return one proposed title followed by one Markdown body in a fenced block. Do not write a file unless the user separately asks for a local artifact. Do not add conversational text inside the body.
 
 ````markdown
-# PR Summary: $title
+# PR Summary: [proposed title]
 
-## 📜 High-Level Summary
+## High-level summary
 
-<!-- Insert the concise, high-level summary (max 150 words) from Step 2 here. -->
+[Why, what, and how in at most 150 words.]
 
-## 📊 Architectural Impact & Visualizations
+## Architectural impact
 
-<!--
-  - Insert Mermaid diagram(s) from Step 3 here, if applicable.
-  - Use fenced code blocks with the `mermaid` identifier.
-  - Precede each diagram with a brief explanation.
-  - If no diagram is needed, this entire section can be omitted.
--->
+[Optional focused Mermaid diagram and one-sentence explanation. Omit when unnecessary.]
 
-**Example:**
-This diagram illustrates the new data flow for user registration.
+## Detailed changesets
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant Frontend
-    participant Backend API
-    participant Database
+### Changeset 1: [meaningful title]
 
-    User->>Frontend: Fills out registration form
-    Frontend->>Backend API: POST /api/v1/register
-    Backend API->>Database: INSERT INTO users
-    Database-->>Backend API: New User ID
-    Backend API-->>Frontend: { success: true, userId }
-    Frontend-->>User: Show success message
-```
+**Files affected**
 
-## ⚙️ Detailed Changeset Breakdown
+- `path/to/file`
 
----
+**Changes**
 
-### Changeset 1: [Meaningful Title for the First Group of Changes]
+- [specific behavior or implementation change]
+- Public/API/data impact: [none, or exact impact]
 
-**Files Affected:**
+**Depends on:** [nothing or prior changeset]
 
-- `db/schema/bookings.ts`
-- `supabase/migrations/0030_bookings.sql`
+**Enables:** [later change or outcome]
+**Triage:** `NEEDS_REVIEW` or `APPROVED`
 
-**Summary of Changes:**
+## Verification
 
-- <!-- Bulleted list explaining the specific changes in this changeset. -->
-- <!-- Remember to note any changes to public APIs, function signatures, or global state. -->
+- `[command]` — [observed result, or "not run"]
 
-**Depends on:** <!-- Nothing (foundation) / Changeset N --> · **Enables:** <!-- which later changesets build on this -->
+## Gotchas and non-obvious details
 
-**[TRIAGE]:** <NEEDS_REVIEW or APPROVED>
+[Omit when none.]
 
----
-
-<!-- Repeat for each changeset, in dependency order. -->
-
-## ⚠️ Gotchas and Non-Obvious Details
-
-<!--
-  - Things that look wrong but are intentional, implicit assumptions, tricky ordering.
-  - Omit the section if there are none.
--->
-
-Close #<issue-number> <!-- only when an issue number was passed as $ARGUMENTS; the `#` is required for GitHub auto-close -->
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Close #[issue-number]
 ````
 
-Create or update the PR with this body via `gh pr create` / `gh pr edit`, and update the title.
+Include the `Close #...` line only when `$ARGUMENTS` contains a valid issue number. Never infer an issue number from unrelated text.
+
+After the fenced proposal, state:
+
+- whether an existing body was checked and which Why/What/How gaps were filled;
+- the diff baseline and HEAD used;
+- that no branch, Git remote, PR, title, body, comment, or merge state was changed;
+- that publishing requires a separate explicit request naming the target PR.

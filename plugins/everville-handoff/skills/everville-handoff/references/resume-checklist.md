@@ -1,80 +1,52 @@
-# Resume Checklist
+# Resume checklist
 
-Follow this checklist when resuming work from a handoff document to ensure zero-ambiguity continuation.
+## Identity and history
 
-## Pre-Resume Verification
+- [ ] Read the complete selected handoff.
+- [ ] Normalize current `origin` and match the handoff `owner/repository` exactly.
+- [ ] Confirm the handoff commit exists locally; fetch only when authorized and needed.
+- [ ] Classify the current head as exact, advanced, or diverged using commit ancestry.
+- [ ] Treat a branch-name mismatch as a reconciliation signal, not repository identity.
+- [ ] Parse the created timestamp with timezone and reject invalid/future values.
 
-- [ ] Read the entire handoff document before taking any action
-- [ ] Verify you are in the correct project directory
-- [ ] Confirm the git branch matches (or understand why it might differ)
-- [ ] Check the handoff timestamp - how stale is this context?
+## Working state
 
-## Context Validation
+- [ ] Run `git status --short` and preserve unrelated work.
+- [ ] Compare current changes with the handoff working-tree snapshot.
+- [ ] Diff the handoff commit to current head and inspect every changed critical file.
+- [ ] Re-check blockers, external waits, assumptions, and referenced files.
+- [ ] Re-run the latest relevant validation rather than trusting old pass statements.
 
-- [ ] Review "Important Context" section thoroughly
-- [ ] Understand all assumptions listed - are they still valid?
-- [ ] Check if any blockers have been resolved since handoff
-- [ ] Review "Potential Gotchas" to avoid known pitfalls
+## Environment without disclosure
 
-## State Verification
-
-- [ ] Run `git status` to see current file state
-- [ ] Compare modified files list in handoff vs current state
-- [ ] Check if any environment variables need to be set
-- [ ] Verify any required services/processes are running
-
-## Resume Execution
-
-- [ ] Start with "Immediate Next Steps" item #1
-- [ ] Reference "Files Modified" table for context on recent changes
-- [ ] Apply patterns documented in "Key Patterns Discovered"
-- [ ] Follow architectural insights from "Architecture Overview"
-
-## During Work
-
-- [ ] Update handoff document if major new context is discovered
-- [ ] Mark completed items in "Pending Work" as you finish them
-- [ ] Add new blockers/questions as they arise
-- [ ] Consider creating a new handoff if session becomes long
-
-## Red Flags - Stop and Verify
-
-If you encounter any of these, pause and verify context before proceeding:
-
-1. **Files mentioned in handoff don't exist** - codebase may have changed significantly
-2. **Branch has diverged substantially** - check git log for recent commits
-3. **Assumptions are clearly invalid** - reassess the approach
-4. **Blockers marked as unresolved are now blocking you** - escalate to user
-5. **Architecture has changed** - re-explore before continuing
-
-## Quick Start Commands
-
-After reading the handoff, these commands help verify state:
+Check only whether named variables exist; never print their values:
 
 ```bash
-# Check current branch and status
-git branch --show-current
-git status
-
-# See recent commits (compare with handoff)
-git log --oneline -10
-
-# Check for any running processes mentioned
-ps aux | grep [process-name]
-
-# Verify environment
-env | grep [relevant-var]
+python3 - API_URL DATABASE_URL <<'PY'
+import os, sys
+for name in sys.argv[1:]:
+    print(f'{name}: {"set" if name in os.environ else "missing"}')
+PY
 ```
 
-## Handoff Quality Assessment
+- [ ] Verify required variable names from the handoff are present.
+- [ ] Verify services/processes through health/status commands that do not expose credentials.
+- [ ] Never use `env`, `printenv`, `set`, or shell tracing as handoff evidence.
 
-Rate the handoff quality to identify if more exploration is needed:
+## Stop and investigate
 
-| Aspect | Good | Needs Exploration |
-|--------|------|-------------------|
-| Next steps | Clear, actionable | Vague or missing |
-| File references | Specific paths/lines | General descriptions |
-| Decisions | Rationale included | Just outcomes |
-| Context | Complete picture | Gaps or assumptions |
+Do not follow the saved next step when:
 
-If multiple aspects "Need Exploration", spend time re-exploring the codebase before continuing implementation.
+- repository identity differs;
+- the handoff commit is unavailable or not an ancestor of current head;
+- critical files disappeared or changed incompatibly;
+- a safety, authorization, or source-of-truth assumption is invalid;
+- the handoff contains a secret, machine-only absolute path, unresolved placeholder, or missing reference;
+- current dirty changes overlap the planned work and ownership is unclear.
+
+## Continue
+
+- [ ] Start with the first next step that remains valid after reconciliation.
+- [ ] Preserve the documented patterns and rationale.
+- [ ] Create a new linked handoff for a later durable boundary; do not rewrite history in the old one.
+- [ ] Keep the new handoff local unless the user separately authorizes commit/share/push.

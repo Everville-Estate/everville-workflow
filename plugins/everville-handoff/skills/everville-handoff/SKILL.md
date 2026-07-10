@@ -1,33 +1,33 @@
 ---
 name: everville-handoff
-description: "Create comprehensive handoff documents for seamless agent session transfers. Triggered when: (1) user requests handoff/memory/context save, (2) context is filling up and work should be checkpointed before a boundary, (3) major task milestone completed, (4) work session ending, (5) user says 'save state', 'create handoff', 'I need to pause', (6) resuming with 'load handoff', 'resume from', 'continue where we left off'. A handoff preserves context across a boundary — checkpoint before context runs low, but don't let it become a reason to stop productive work early. Everville-specific: stores handoffs under .claude/handoffs/ in the repo being worked on so future agents in any Everville project can resume."
+description: Create or resume validated repository-local handoffs for explicit cross-machine, cross-agent, or durable checkpoint requests. Stores portable identity as sanitized Git owner/repository plus commit, never environment values, and never commits or shares the file automatically.
 ---
 
 <!--
   Adapted from softaworks/agent-toolkit (session-handoff) — MIT licensed.
   See LICENSES/softaworks-MIT.txt for the original license text.
-  Everville modifications: renamed to everville-handoff; replaced Python
-  scaffolding/validation scripts (create_handoff.py, validate_handoff.py,
-  list_handoffs.py, check_staleness.py) with native bash + git + gh recipes;
-  description calls out the long-running agent-orchestration use case that
-  surfaces across balicopter, portal, and eva work.
+  Everville modifications: portable repository identity, aggregated fail-closed
+  validation, commit-ancestry staleness, and explicit sharing boundaries.
 -->
 
 # Everville Handoff
 
-Creates handoff documents that let a fresh agent continue work with zero ambiguity — across machines, across agents (Claude Code ↔ Hermes ↔ Codex), across a context boundary, or across a deliberate pause. Use it to checkpoint before context runs low; just don't let it become a reason to wrap up while there's productive work left.
+Use a handoff when work must cross a machine, agent, teammate, or durable repository boundary. Claude Code's native resume and auto-memory are normally enough for same-machine continuation, so do not create repository files merely because a turn is ending.
 
-**Scope note:** same-session and same-machine continuation is now covered natively by Claude Code (context summarization + the per-machine auto-memory directory). This skill earns its keep at the boundaries the native mechanisms can't cross: a different machine, a different agent (Hermes/Codex), or a repo-committed checkpoint another teammate will pick up. For a plain "continue tomorrow on this machine" case, native resume is enough — don't create a handoff file out of habit.
+## Safety and sharing boundary
 
-## Mode Selection
+- Store handoffs under `.claude/handoffs/` in the repository.
+- Record the sanitized `owner/repository`, branch, and commit. An absolute checkout path is not repository identity and should not appear in a portable handoff.
+- Record environment variable names and whether setup is required, never values.
+- Do not include credentials, session cookies, private URLs containing credentials, customer data, or copied secret-bearing logs.
+- Creation is local only. Do not stage, commit, push, upload, or send a handoff unless the user explicitly authorizes that exact sharing action after reviewing the file.
+- Before committing a handoff, confirm repository policy allows it and consider whether the content belongs in a private issue or approved vault instead. Never push it automatically.
 
-- **Creating a handoff** — user wants to save state or pause work. Follow **CREATE**.
-- **Resuming from a handoff** — user wants to continue previous work or mentions an existing handoff. Follow **RESUME**.
-- **Proactive checkpoint** — when context is genuinely getting full, or after substantial work (major milestone, complex debugging resolved, architectural decisions made), create the handoff and report its path in your summary. Offer rather than interrupt: checkpoint at a natural boundary, don't halt active work mid-task to ask.
+## CREATE
 
-## CREATE Workflow
+### 1. Capture portable metadata
 
-### Step 1: Generate the scaffold
+Run from the repository root:
 
 ```bash
 SLUG=${1:-work}
@@ -35,181 +35,168 @@ STAMP=$(date +%Y-%m-%d-%H%M%S)
 DIR=.claude/handoffs
 mkdir -p "$DIR"
 FILE="$DIR/${STAMP}-${SLUG}.md"
-
+REMOTE=$(git remote get-url origin)
+REPOSITORY=$(python3 - "$REMOTE" <<'PY'
+import re, sys, urllib.parse
+s = sys.argv[1].strip()
+if re.match(r'^[^/@]+@[^:]+:', s):
+    host, path = s.split(':', 1)
+    s = host.split('@', 1)[1] + '/' + path
+else:
+    parsed = urllib.parse.urlsplit(s)
+    if parsed.scheme:
+        s = (parsed.hostname or '') + parsed.path
+s = s.split('?', 1)[0].split('#', 1)[0].strip('/').removesuffix('.git')
+parts = [p for p in s.split('/') if p]
+if len(parts) < 2:
+    raise SystemExit('cannot derive owner/repository from origin')
+print('/'.join(parts[-2:]))
+PY
+)
 BRANCH=$(git branch --show-current)
+HEAD_SHA=$(git rev-parse HEAD)
 COMMITS=$(git log -5 --oneline)
 MODIFIED=$(git status --short)
-CWD=$(pwd)
-
-cat > "$FILE" <<EOF
-# Handoff: ${SLUG}
-
-**Created:** $(date -Iseconds)
-**Project:** $CWD
-**Branch:** $BRANCH
-
-## Recent commits
-\`\`\`
-$COMMITS
-\`\`\`
-
-## Modified files
-\`\`\`
-$MODIFIED
-\`\`\`
-
-## Current State Summary
-[TODO: what's happening right now, in 2-4 sentences]
-
-## Important Context
-[TODO: critical info the next agent MUST know — environment, blockers, half-applied changes, external waits]
-
-## Immediate Next Steps
-1. [TODO: first concrete action]
-2. [TODO: second]
-3. [TODO: third]
-
-## Decisions Made
-- [TODO: decision + rationale, not just outcome]
-
-## Critical Files
-- path/to/file.ts — [why it matters]
-
-## Key Patterns Discovered
-- [TODO: conventions to follow]
-
-## Potential Gotchas
-- [TODO: known issues to avoid]
-
-## Pending Work
-- [ ] [TODO]
-
-## Continues from
-[TODO: previous handoff filename if this is a chain, otherwise "(new)"]
-EOF
-echo "Handoff scaffold: $FILE"
 ```
 
-### Step 2: Fill in every `[TODO: ...]`
+The normalization intentionally drops URL userinfo, query strings, and host-specific checkout syntax so embedded credentials cannot enter the handoff.
 
-Prioritize these four sections first:
+### 2. Create and complete the document
 
-1. **Current State Summary** — what's happening right now
-2. **Important Context** — critical info the next agent MUST know
-3. **Immediate Next Steps** — clear, actionable first action
-4. **Decisions Made** — choices with rationale (not just outcomes)
+Create `$FILE` from `references/handoff-template.md`. Fill every placeholder. At minimum include:
 
-See `references/handoff-template.md` for expanded guidance per section.
+- created time in ISO 8601 with timezone;
+- repository (`owner/repository`), branch, and full head SHA;
+- current outcome/status in 2–4 sentences;
+- exact next action;
+- completed and pending work;
+- decisions with rationale;
+- critical repository-relative files in backticks;
+- blockers and external waits without sensitive payloads;
+- required environment variable **names** only;
+- predecessor filename if this continues a handoff chain.
 
-### Step 3: Validate
+Do not paste `env`, `.env`, credential-store output, authenticated URLs, or full logs. Summarize errors and link to an approved artifact instead.
+
+### 3. Validate once, fail closed
+
+Run the following validator with the real handoff path. It aggregates all findings and exits non-zero if any exist:
 
 ```bash
-FILE=".claude/handoffs/<stamp>-<slug>.md"
-# 1. No [TODO placeholders remain
-grep -n "\[TODO:" "$FILE" && echo "FAIL: placeholders remain" || echo "OK"
+python3 - "$FILE" <<'PY'
+from pathlib import Path
+import re, subprocess, sys
 
-# 2. No obvious secrets
-grep -Ein "api[_-]?key|password|token|secret|bearer|sk_(live|test)_|AKIA[0-9A-Z]{16}" "$FILE" && echo "FAIL: possible secret" || echo "OK"
+path = Path(sys.argv[1])
+issues = []
+if not path.is_file():
+    issues.append(f'handoff does not exist: {path}')
+    text = ''
+else:
+    text = path.read_text(encoding='utf-8')
 
-# 3. All referenced files exist
-grep -oE '(\./|plugins/|app/|components/|db/|supabase/)[a-zA-Z0-9_./-]+' "$FILE" | sort -u | while read p; do
-  [ -e "$p" ] || echo "MISSING: $p"
-done
+for match in re.finditer(r'<[A-Z][A-Z0-9_-]*(?::[A-Z0-9_-]+)?>', text):
+    issues.append(f'placeholder remains: {match.group(0)}')
+
+secret_patterns = {
+    'private key': r'-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----',
+    'AWS access key': r'\bAKIA[0-9A-Z]{16}\b',
+    'GitHub token': r'\b(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})\b',
+    'provider secret': r'\b(?:sk_(?:live|test)_[A-Za-z0-9]{12,}|sk-[A-Za-z0-9_-]{20,})\b',
+    'bearer credential': r'(?i)\bBearer\s+[A-Za-z0-9._~+/=-]{12,}',
+    'credentialed URL': r'(?i)\b[a-z][a-z0-9+.-]*://[^\s/@:]+:[^\s/@]+@',
+    'assigned secret value': r'(?im)^\s*(?:api[_-]?key|password|access[_-]?token|refresh[_-]?token|client[_-]?secret)\s*[:=]\s*(?!<|\[|REDACTED\b|NOT_SET\b)["\x27]?[A-Za-z0-9._~+/=-]{8,}',
+}
+for label, pattern in secret_patterns.items():
+    if re.search(pattern, text):
+        issues.append(f'possible {label}')
+
+if re.search(r'(?i)(?:/Users/[^/\s]+|/home/[^/\s]+|[A-Z]:\\Users\\[^\\\s]+)', text):
+    issues.append('machine-specific home path found; use repository-relative paths')
+
+refs = set(re.findall(r'`((?:\.?/)?(?:[A-Za-z0-9_.@-]+/)+[A-Za-z0-9_.@-]+(?::\d+)?)`', text))
+for ref in sorted(refs):
+    candidate = re.sub(r':\d+$', '', ref).removeprefix('./')
+    if candidate.startswith(('.claude/handoffs/', 'http://', 'https://')):
+        continue
+    if not Path(candidate).exists():
+        issues.append(f'missing referenced file: {ref}')
+
+if issues:
+    print('HANDOFF INVALID')
+    for issue in issues:
+        print(f'- {issue}')
+    raise SystemExit(1)
+print('HANDOFF VALID')
+PY
 ```
 
-Fail closed: do not finalize a handoff with placeholders, detected secrets, or missing files.
+Review every reported item. Do not finalize, share, or claim success until the validator exits 0. Pattern checks reduce risk but cannot prove a document contains no sensitive information; perform a human-readable diff review too.
 
-### Step 4: Confirm
+### 4. Report local completion
 
-Report to the user:
-- Handoff file path
-- Any validator warnings
-- Summary of captured context (3 sentences max)
-- First action the next session should take
+Report the repository-relative path, validator result, head SHA, and first next action. State explicitly that the handoff is uncommitted/unshared unless the user separately authorized sharing.
 
-## RESUME Workflow
+## RESUME
 
-### Step 1: List available handoffs
+### 1. Select and read
 
 ```bash
 ls -t .claude/handoffs/*.md 2>/dev/null
 ```
 
-Most recent first. Title and date are in the filename: `YYYY-MM-DD-HHMMSS-<slug>.md`.
+Read the selected handoff completely before acting. Read the direct predecessor when a missing decision or assumption depends on it; do not recursively load an entire chain without need.
 
-### Step 2: Check staleness
+### 2. Verify repository identity and staleness
+
+Extract the `Repository`, `Branch`, `Head`, and `Created` fields. Normalize the current origin using the CREATE recipe and require the same `owner/repository`. A mismatch is a hard stop.
+
+Use Git ancestry as the primary staleness signal:
 
 ```bash
-FILE="$1"
-CREATED=$(grep -m1 '^\*\*Created:\*\*' "$FILE" | sed 's/.*Created:\*\* //')
-# python3 handles the ISO-8601 colon offset (+08:00) portably; BSD `date -j -f "%z"` does not, and GNU `date -d` doesn't exist on macOS
-CREATED_EPOCH=$(python3 -c "import datetime,sys; print(int(datetime.datetime.fromisoformat(sys.argv[1]).timestamp()))" "$CREATED")
-NOW=$(date +%s)
-AGE_HOURS=$(( (NOW - CREATED_EPOCH) / 3600 ))
+HANDOFF_HEAD=<full-sha-from-handoff>
 
-COMMITS_SINCE=$(git log --since="$CREATED" --oneline | wc -l | tr -d ' ')
-FILES_CHANGED=$(git log --since="$CREATED" --name-only --pretty=format: | sort -u | grep -v '^$' | wc -l | tr -d ' ')
-
-echo "Age: ${AGE_HOURS}h | Commits since: $COMMITS_SINCE | Files changed: $FILES_CHANGED"
-
-if   [ $AGE_HOURS -lt 2 ] && [ $COMMITS_SINCE -lt 3 ]; then echo "FRESH — safe to resume"
-elif [ $AGE_HOURS -lt 24 ] || [ $COMMITS_SINCE -lt 10 ]; then echo "SLIGHTLY_STALE — review diff, then resume"
-elif [ $AGE_HOURS -lt 168 ]; then echo "STALE — verify context carefully"
-else echo "VERY_STALE — consider creating a fresh handoff"
+if ! git cat-file -e "${HANDOFF_HEAD}^{commit}" 2>/dev/null; then
+  echo "UNKNOWN — handoff commit is unavailable; fetch/reconcile before resuming"
+elif [ "$(git rev-parse HEAD)" = "$HANDOFF_HEAD" ]; then
+  echo "EXACT — repository is at the handoff commit"
+elif git merge-base --is-ancestor "$HANDOFF_HEAD" HEAD; then
+  COMMITS_SINCE=$(git rev-list --count "$HANDOFF_HEAD..HEAD")
+  FILES_CHANGED=$(git diff --name-only "$HANDOFF_HEAD..HEAD" | sed '/^$/d' | wc -l | tr -d ' ')
+  echo "ADVANCED — ${COMMITS_SINCE} commits and ${FILES_CHANGED} files changed; reconcile before work"
+else
+  echo "DIVERGED — handoff head is not an ancestor of current HEAD; stop and investigate"
 fi
 ```
 
-### Step 3: Read the handoff completely
-
-Before taking any action. If the handoff has a "Continues from" link, read the predecessor too — you need the full chain.
-
-### Step 4: Verify context
-
-Walk the checklist in `references/resume-checklist.md`:
-
-1. Project directory and git branch match
-2. Blockers have been resolved
-3. Assumptions still hold
-4. Modified files don't conflict with current HEAD
-5. Environment state matches
-
-### Step 5: Begin work
-
-Start with **Immediate Next Steps** item #1. Reference "Critical Files", "Key Patterns Discovered", and "Potential Gotchas" as you work.
-
-### Step 6: Update or chain
-
-Long session? Create a new handoff linked to this one:
+Wall-clock age is supplemental, not the primary verdict. Parse ISO 8601 safely and reject invalid or future timestamps rather than trusting `git log --since`:
 
 ```bash
-SLUG=continuation-1
-STAMP=$(date +%Y-%m-%d-%H%M%S)
-PREV=.claude/handoffs/<previous>.md
-NEW=.claude/handoffs/${STAMP}-${SLUG}.md
-# ... same scaffold as Step 1 above, with:
-# Continues from
-# $PREV
+python3 - "$CREATED" <<'PY'
+from datetime import datetime, timezone
+import sys
+raw = sys.argv[1].strip().replace('Z', '+00:00')
+created = datetime.fromisoformat(raw)
+if created.tzinfo is None:
+    raise SystemExit('Created timestamp must include timezone')
+hours = (datetime.now(timezone.utc) - created.astimezone(timezone.utc)).total_seconds() / 3600
+if hours < -0.05:
+    raise SystemExit('Created timestamp is in the future')
+print(f'Age: {max(hours, 0):.1f}h')
+PY
 ```
 
-## Handoff Chaining
+### 3. Reconcile before implementation
 
-```
-2026-04-23-093000-auth.md        (initial)
-    ↓  Continues from
-2026-04-23-143000-auth-part-2.md
-    ↓  Continues from
-2026-04-24-090000-auth-part-3.md
-```
+Follow `references/resume-checklist.md`. Verify current dirty state, changed critical files, blockers, required services, dependency versions, and environment-variable presence. Check presence without printing values.
 
-When resuming from a chain: read the most recent handoff, reference predecessors as needed.
+If the commit diverged, the repository identity differs, critical files disappeared, or a safety assumption no longer holds, stop and re-establish context rather than following stale next steps.
 
-## Storage
+### 4. Continue or supersede
 
-`.claude/handoffs/` at the root of the repo being worked on (not in `~/.claude`). This keeps context with the code and is portable across Everville repos.
-
-Naming: `YYYY-MM-DD-HHMMSS-<slug>.md`
+Begin with the first still-valid immediate next step. If a later durable boundary is needed, create a new handoff with the current head and name the predecessor. Do not edit an old handoff to pretend it represents newer state.
 
 ## References
 
-- `references/handoff-template.md` — full template structure with guidance per section
-- `references/resume-checklist.md` — verification checklist for resuming agents
+- `references/handoff-template.md` — portable document template
+- `references/resume-checklist.md` — reconciliation and secret-safe environment checks

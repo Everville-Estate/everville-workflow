@@ -1,132 +1,64 @@
-# Marketplace Schema Reference
+# Marketplace schema reference
 
-## Marketplace Structure
+The catalog lives at `.claude-plugin/marketplace.json` in the repository root.
 
-A marketplace is a JSON catalog enabling plugin discovery and distribution.
-
-**File location:** `.claude-plugin/marketplace.json`
-
-## Required Fields
+## Minimal shape
 
 ```json
 {
-  "name": "marketplace-identifier",
+  "name": "everville-workflow",
   "owner": {
-    "name": "Maintainer Name",
-    "email": "maintainer@example.com"
+    "name": "Everville Estate PTE LTD",
+    "email": "niko@everville.estate"
   },
-  "plugins": []
-}
-```
-
-**name**: Kebab-case marketplace identifier
-**owner**: Maintainer contact information
-**plugins**: Array of plugin entries
-
-## Optional Marketplace Fields
-
-**description**: Marketplace overview text
-**version**: Release version
-**pluginRoot**: Base path for relative plugin sources
-
-## Plugin Entry Schema
-
-Each plugin entry in the `plugins` array:
-
-**Required:**
-
-- `name`: Plugin identifier (kebab-case, must match plugin.json)
-- `source`: Plugin origin specification
-
-**Optional:**
-
-- `description`: Plugin purpose
-- `version`: Plugin version (semantic versioning)
-- `author`: Creator information
-- `homepage`: URL
-- `repository`: URL
-- `license`: SPDX identifier
-- `keywords`: Array of search terms
-- `category`: Classification (e.g., "framework", "productivity")
-- `tags`: Additional discovery tags
-- `commands`: Path to commands directory
-- `agents`: Path to agents directory
-- `hooks`: Path to hooks configuration
-- `mcpServers`: Path to MCP configuration
-
-## Source Specifications
-
-### Relative Path Source
-
-```json
-{
-  "name": "my-plugin",
-  "source": "./plugins/my-plugin"
-}
-```
-
-### GitHub Source
-
-```json
-{
-  "name": "my-plugin",
-  "source": {
-    "source": "github",
-    "repo": "owner/repo"
-  }
-}
-```
-
-### Generic Git Source
-
-```json
-{
-  "name": "my-plugin",
-  "source": {
-    "source": "url",
-    "url": "https://git.example.com/plugin.git"
-  }
-}
-```
-
-## Complete Example
-
-```json
-{
-  "name": "example-marketplace",
-  "description": "Example plugin marketplace",
-  "version": "1.0.0",
-  "owner": {
-    "name": "Marketplace Owner",
-    "email": "owner@example.com"
-  },
-  "pluginRoot": "./plugins",
   "plugins": [
     {
       "name": "example-plugin",
-      "source": "./example-plugin",
-      "description": "Example plugin",
-      "version": "1.0.0",
-      "keywords": ["example"],
-      "category": "productivity"
+      "source": "./plugins/example-plugin",
+      "description": "What the plugin adds",
+      "version": "0.1.0",
+      "author": { "name": "Everville Estate PTE LTD" }
     }
   ]
 }
 ```
 
-## Team Distribution
+The marketplace requires `name`, `owner`, and `plugins`. Each local entry requires a stable `name` and a `source` relative to the marketplace root. Keep the entry's version synchronized with the source plugin's `.claude-plugin/plugin.json`; the plugin manifest version takes precedence when both are present.
 
-Configure automatic marketplace availability via `.claude/settings.json`:
+Use only fields accepted by the installed Claude Code schema. Confirm the current contract rather than copying metadata from npm, VS Code, or an old marketplace example:
 
-```json
-{
-  "extraKnownMarketplaces": [
-    {
-      "source": {
-        "source": "github",
-        "repo": "company/marketplace"
-      }
-    }
-  ]
-}
+```bash
+claude plugin validate . --strict
 ```
+
+Without `--strict`, unrecognized fields are warnings and the marketplace may still load. Strict mode is the release gate.
+
+## Distribution and scopes
+
+Add the GitHub marketplace with:
+
+```bash
+claude plugin marketplace add Everville-Estate/everville-workflow
+```
+
+Install a catalog entry with an explicit scope:
+
+```bash
+claude plugin install example-plugin@everville-workflow --scope project
+```
+
+- `user`: available across projects; CLI install default
+- `project`: shared project configuration
+- `local`: project-specific, normally gitignored
+- `managed`: organization-controlled; updates are policy-owned
+
+Choose scope according to the plugin's hooks, context cost, network access, and side effects. A team workflow normally belongs at project or managed scope, not silently at user scope.
+
+## Updating
+
+```bash
+claude plugin marketplace update everville-workflow
+claude plugin update example-plugin@everville-workflow --scope project
+```
+
+Installed updates require restart to apply. Mid-session plugin processes may retain the previous cached path until reload or restart.

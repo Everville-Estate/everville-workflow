@@ -1,295 +1,149 @@
 ---
 name: everville-agent-md-refactor
-description: Refactor bloated CLAUDE.md / AGENTS.md files in Everville repos (team portal, balicopter, knowledge, docint, etc.) to follow progressive disclosure. Splits monolithic instruction files into a minimal root + linked .claude/*.md topic files. Use when a repo CLAUDE.md exceeds ~100 lines or contradicts itself.
+description: Refactor large or contradictory CLAUDE.md and AGENTS.md instruction sets in Everville repositories using real Claude Code loading mechanisms. Use @imports for universally required modules and path-scoped .claude/rules for conditional guidance while preserving safety-critical instructions.
 license: MIT
 ---
 
 <!--
   Adapted from softaworks/agent-toolkit (agent-md-refactor) — MIT licensed.
   See LICENSES/softaworks-MIT.txt for the original license text.
-  Everville modifications: renamed to everville-agent-md-refactor; description
-  targets Everville repo CLAUDE.md files (team portal, balicopter, knowledge, etc.)
-  that have accumulated stack-specific instructions over many PRs.
+  Everville modifications: renamed and corrected for Claude Code @imports,
+  .claude/rules path scoping, AGENTS.md compatibility, and context cost.
 -->
 
 # Everville Agent MD Refactor
 
-Refactor bloated agent instruction files (AGENTS.md, CLAUDE.md, COPILOT.md, etc.) to follow **progressive disclosure principles** - keeping essentials at root and organizing the rest into linked, categorized files.
+Refactor project instructions without changing their meaning or silently removing their runtime effect.
 
----
+## Loading facts
 
-## Triggers
+- Claude Code loads project instructions from `CLAUDE.md` or `.claude/CLAUDE.md`.
+- Claude Code does not load `AGENTS.md` by name. If it is the shared source, create a `CLAUDE.md` containing `@AGENTS.md` (plus any Claude-specific rules), or use a supported symlink.
+- An ordinary Markdown link such as `[Testing](.claude/testing.md)` is navigation for humans, not an instruction import.
+- `@path/to/file` in `CLAUDE.md` imports that file. Imports load at session start, including nested imports, so splitting into imports improves organization but does **not** reduce token cost.
+- Markdown files under `.claude/rules/` are discovered as rules. A rule without `paths` frontmatter loads unconditionally. A rule with `paths` loads when Claude reads a matching file.
+- Procedures that apply only on demand should become skills, not always-loaded instruction files.
 
-Use this skill when:
-- "refactor my AGENTS.md" / "refactor my CLAUDE.md"
-- "split my agent instructions"
-- "organize my CLAUDE.md file"
-- "my AGENTS.md is too long"
-- "progressive disclosure for my instructions"
-- "clean up my agent config"
+## Safety invariant
 
----
+Never delete, weaken, or conditionally hide an instruction concerning secrets, authentication, authorization, production writes, destructive commands, regulated data, source-of-truth boundaries, required verification, or explicit human approval merely to shorten the root file. Preserve it in an always-loaded project instruction unless its scope is truly limited and the path rule covers every affected file.
 
-## Quick Reference
-
-| Phase | Action | Output |
-|-------|--------|--------|
-| 1. Analyze | Find contradictions | List of conflicts to resolve |
-| 2. Extract | Identify essentials | Core instructions for root file |
-| 3. Categorize | Group remaining instructions | Logical categories |
-| 4. Structure | Create file hierarchy | Root + linked files |
-| 5. Prune | Flag for deletion | Redundant/vague instructions |
-
----
+Record every moved, merged, and deleted instruction so reviewers can prove coverage.
 
 ## Process
 
-### Phase 1: Find Contradictions
+### 1. Inventory and resolve contradictions
 
-Identify any instructions that conflict with each other.
+Read all relevant sources before editing:
 
-**Look for:**
-- Contradictory style guidelines (e.g., "use semicolons" vs "no semicolons")
-- Conflicting workflow instructions
-- Incompatible tool preferences
-- Mutually exclusive patterns
+```bash
+find .. -name CLAUDE.md -o -name CLAUDE.local.md -o -name AGENTS.md
+find .claude/rules -type f -name '*.md' 2>/dev/null
+```
 
-**For each contradiction found:**
+Build an inventory with columns for source, instruction, current scope, proposed destination, and disposition. Identify contradictions and ask the user to resolve only choices that materially change behavior. Do not pick one silently.
+
+### 2. Classify by loading need
+
+| Need | Destination | Context behavior |
+| --- | --- | --- |
+| Applies to every task | Root `CLAUDE.md` or unscoped `.claude/rules/*.md` | Always loaded |
+| Universal module kept separate for ownership/readability | `@.claude/instructions/<topic>.md` import from root | Always loaded; no token saving |
+| Applies only to known files/directories | `.claude/rules/<topic>.md` with `paths` | Loads on matching file reads |
+| Repeatable multi-step procedure | `.claude/skills/<name>/SKILL.md` | Body loads when invoked |
+| Personal, machine-specific preference | `CLAUDE.local.md` | Local project context; normally gitignored |
+| Vague, redundant, or demonstrably obsolete | Delete with rationale | No load |
+
+Keep the root concise, but do not use a line-count target as a reason to lose necessary context.
+
+### 3. Choose imports or path rules deliberately
+
+Use an import when every session needs the complete module:
+
 ```markdown
-## Contradiction Found
+# Project name
 
-**Instruction A:** [quote]
-**Instruction B:** [quote]
-
-**Question:** Which should take precedence, or should both be conditional?
-```
-
-Ask the user to resolve before proceeding.
-
----
-
-### Phase 2: Identify the Essentials
-
-Extract ONLY what belongs in the root agent file. The root should be minimal - information that applies to **every single task**.
-
-**Essential content (keep in root):**
-| Category | Example |
-|----------|---------|
-| Project description | One sentence: "A React dashboard for analytics" |
-| Package manager | Only if not npm (e.g., "Uses pnpm") |
-| Non-standard commands | Custom build/test/typecheck commands |
-| Critical overrides | Things that MUST override defaults |
-| Universal rules | Applies to 100% of tasks |
-
-**NOT essential (move to linked files):**
-- Language-specific conventions
-- Testing guidelines
-- Code style details
-- Framework patterns
-- Documentation standards
-- Git workflow details
-
----
-
-### Phase 3: Group the Rest
-
-Organize remaining instructions into logical categories.
-
-**Common categories:**
-| Category | Contents |
-|----------|----------|
-| `typescript.md` | TS conventions, type patterns, strict mode rules |
-| `testing.md` | Test frameworks, coverage, mocking patterns |
-| `code-style.md` | Formatting, naming, comments, structure |
-| `git-workflow.md` | Commits, branches, PRs, reviews |
-| `architecture.md` | Patterns, folder structure, dependencies |
-| `api-design.md` | REST/GraphQL conventions, error handling |
-| `security.md` | Auth patterns, input validation, secrets |
-| `performance.md` | Optimization rules, caching, lazy loading |
-
-**Grouping rules:**
-1. Each file should be self-contained for its topic
-2. Aim for 3-8 files (not too granular, not too broad)
-3. Name files clearly: `{topic}.md`
-4. Include only actionable instructions
-
----
-
-### Phase 4: Create the File Structure
-
-**Output structure:**
-```
-project-root/
-├── CLAUDE.md (or AGENTS.md)     # Minimal root with links
-└── .claude/                      # Or docs/agent-instructions/
-    ├── typescript.md
-    ├── testing.md
-    ├── code-style.md
-    ├── git-workflow.md
-    └── architecture.md
-```
-
-**Root file template:**
-```markdown
-# Project Name
-
-One-sentence description of the project.
-
-## Quick Reference
-
-- **Package Manager:** pnpm
-- **Build:** `pnpm build`
-- **Test:** `pnpm test`
-- **Typecheck:** `pnpm typecheck`
-
-## Detailed Instructions
-
-For specific guidelines, see:
-- [TypeScript Conventions](.claude/typescript.md)
-- [Testing Guidelines](.claude/testing.md)
-- [Code Style](.claude/code-style.md)
-- [Git Workflow](.claude/git-workflow.md)
-- [Architecture Patterns](.claude/architecture.md)
-```
-
-**Each linked file template:**
-```markdown
-# {Topic} Guidelines
-
-## Overview
-Brief context for when these guidelines apply.
-
-## Rules
-
-### Rule Category 1
-- Specific, actionable instruction
-- Another specific instruction
-
-### Rule Category 2
-- Specific, actionable instruction
-
-## Examples
-
-### Good
-\`\`\`typescript
-// Example of correct pattern
-\`\`\`
-
-### Avoid
-\`\`\`typescript
-// Example of what not to do
-\`\`\`
-```
-
----
-
-### Phase 5: Flag for Deletion
-
-Identify instructions that should be removed entirely.
-
-**Delete if:**
-| Criterion | Example | Why Delete |
-|-----------|---------|------------|
-| Redundant | "Use TypeScript" (in a .ts project) | Agent already knows |
-| Too vague | "Write clean code" | Not actionable |
-| Overly obvious | "Don't introduce bugs" | Wastes context |
-| Default behavior | "Use descriptive variable names" | Standard practice |
-| Outdated | References deprecated APIs | No longer applies |
-
-**Output format:**
-```markdown
-## Flagged for Deletion
-
-| Instruction | Reason |
-|-------------|--------|
-| "Write clean, maintainable code" | Too vague to be actionable |
-| "Use TypeScript" | Redundant - project is already TS |
-| "Don't commit secrets" | Agent already knows this |
-| "Follow best practices" | Meaningless without specifics |
-```
-
----
-
-## Execution Checklist
-
-```
-[ ] Phase 1: All contradictions identified and resolved
-[ ] Phase 2: Root file contains ONLY essentials
-[ ] Phase 3: All remaining instructions categorized
-[ ] Phase 4: File structure created with proper links
-[ ] Phase 5: Redundant/vague instructions removed
-[ ] Verify: Each linked file is self-contained
-[ ] Verify: Root file is under 50 lines
-[ ] Verify: All links work correctly
-```
-
----
-
-## Anti-Patterns
-
-| Avoid | Why | Instead |
-|-------|-----|---------|
-| Keeping everything in root | Bloated, hard to maintain | Split into linked files |
-| Too many categories | Fragmentation | Consolidate related topics |
-| Vague instructions | Wastes tokens, no value | Be specific or delete |
-| Duplicating defaults | Agent already knows | Only override when needed |
-| Deep nesting | Hard to navigate | Flat structure with links |
-
----
-
-## Examples
-
-### Before (Bloated Root)
-```markdown
-# CLAUDE.md
-
-This is a React project.
-
-## Code Style
-- Use 2 spaces
-- Use semicolons
-- Prefer const over let
-- Use arrow functions
-... (200 more lines)
-
-## Testing
-- Use Jest
-- Coverage > 80%
-... (100 more lines)
-
-## TypeScript
-- Enable strict mode
-... (150 more lines)
-```
-
-### After (Progressive Disclosure)
-```markdown
-# CLAUDE.md
-
-React dashboard for real-time analytics visualization.
+Production application for ...
 
 ## Commands
-- `pnpm dev` - Start development server
-- `pnpm test` - Run tests with coverage
-- `pnpm build` - Production build
 
-## Guidelines
-- [Code Style](.claude/code-style.md)
-- [Testing](.claude/testing.md)
-- [TypeScript](.claude/typescript.md)
+- Build: `pnpm build`
+- Test: `pnpm test`
+
+## Required policy
+
+@.claude/instructions/security.md
+@.claude/instructions/release.md
 ```
 
+Use path-scoped rules when guidance applies only to part of the tree:
+
+```markdown
 ---
+paths:
+  - "src/api/**/*.ts"
+  - "supabase/**/*.{sql,ts}"
+---
+
+# API and database rules
+
+- Validate untrusted input at the boundary.
+- Verify authorization independently of authentication.
+- Include rollback and RLS evidence for schema changes.
+```
+
+Path patterns must cover tests, migrations, generated entry points, and alternate extensions where the rule still matters. If safe coverage cannot be expressed confidently, keep the rule unconditional.
+
+### 4. Handle AGENTS.md repositories
+
+When `AGENTS.md` is canonical for multiple tools, preserve that authority and add a small Claude bridge:
+
+```markdown
+# Claude Code instructions
+
+@AGENTS.md
+
+## Claude-specific notes
+
+- [Only instructions that genuinely apply to Claude Code]
+```
+
+Do not duplicate the full text in both files; duplicated rules drift. If the project intentionally makes `CLAUDE.md` canonical, document that decision and update other tooling separately rather than assuming it reads Claude's file.
+
+### 5. Delete only with evidence
+
+Candidates for deletion include unverifiable advice ("write clean code"), facts already guaranteed by tooling, exact duplicates, and references to removed systems. "Do not commit secrets" is **not** automatically redundant: security and approval rules are safety-critical and should remain concrete.
+
+Produce a deletion table:
+
+| Original source | Instruction | Reason | Evidence |
+| --- | --- | --- | --- |
+| `CLAUDE.md` | ... | duplicate / obsolete / vague | replacement path, tool config, or commit |
 
 ## Verification
 
-After refactoring, verify:
+After editing:
 
-1. **Root file is minimal** - Under 50 lines, only universal info
-2. **Links work** - All referenced files exist
-3. **No contradictions** - Instructions are consistent
-4. **Actionable content** - Every instruction is specific
-5. **Complete coverage** - No instructions were lost (unless flagged for deletion)
-6. **Self-contained files** - Each linked file stands alone
+1. Use `/memory` in Claude Code to confirm the root instructions and unconditional rules are loaded.
+2. Confirm every `@import` target exists; imports are relative to the file containing them and recurse only to Claude Code's supported depth.
+3. Open/read one matching and one non-matching file for each path rule, then use `/memory` or the `InstructionsLoaded` hook view/debug output to confirm expected loading.
+4. Compare the instruction inventory against the new files. Every original instruction must be preserved, intentionally merged, or explicitly deleted.
+5. Search for stale ordinary-link templates and duplicated text:
 
----
+```bash
+rg -n '\]\(\.claude/.*\.md\)' CLAUDE.md .claude 2>/dev/null
+rg -n '^@' CLAUDE.md .claude/CLAUDE.md 2>/dev/null
+```
+
+6. Run the repository's normal validation and inspect `git diff --check`.
+
+## Output
+
+Report:
+
+- files created, moved, and deleted;
+- which content remains always loaded;
+- which rules are path-scoped and their patterns;
+- estimated context effect (imports do not save tokens; path rules and skills can);
+- contradictions resolved by the user;
+- the preservation/deletion inventory and verification evidence.
