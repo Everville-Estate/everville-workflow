@@ -14,11 +14,10 @@ Marketplace installs are copied into Claude Code's plugin cache. Editing this ch
 
 - Skills implement BYPASS/LIGHT/FULL routing, proportional hardening of approved multi-component specifications, entropy control, lessons, production auditing, and CI procedures.
 - Agents provide read-only pattern discovery and background CI observation.
-- `/everville-workflow:explain-pr-changes` generates review-ready PR Markdown. It does not publish or mutate GitHub state.
-- `SessionStart` supplies conditional workflow context.
-- `PreToolUse` can block matched tool calls before execution.
+- The explicit-only `explain-pr-changes` skill generates review-ready PR Markdown. It does not publish or mutate GitHub state.
+- `SessionStart` performs a live remote-identity check and supplies short factual workflow context only in a verified Everville repository.
 
-The hook layer is advisory/deterministic only at its exact event and matcher boundary. It is not proof that the prescribed review happened and is not a substitute for OS permissions, protected branches, required reviews, or CI.
+The hook layer does not intercept tools or make permission decisions. It is not proof that the prescribed review happened and is not a substitute for OS permissions, protected branches, required reviews, or CI.
 
 ### `everville-handoff`
 
@@ -30,7 +29,7 @@ The plugin-forge skill documents and maintains this marketplace. Instruction ref
 
 ## Context and loading
 
-Claude Code loads plugin skills, commands, agents, and hooks from their documented component locations. Plugin-root `CLAUDE.md` is not a plugin component and is not loaded merely because a plugin is enabled.
+Claude Code loads plugin skills, agents, and hooks from their documented component locations. Plugin-root `CLAUDE.md` is not a plugin component and is not loaded merely because a plugin is enabled.
 
 Project instructions belong in the consuming repository's `CLAUDE.md` or `.claude/CLAUDE.md`. `@path` imports are expanded at session start and therefore cost context tokens even if a task never needs them. Topic rules under `.claude/rules/` may use `paths` frontmatter so they load only when matching files are read. Multi-step procedures belong in skills, whose full bodies load only when invoked.
 
@@ -46,3 +45,5 @@ The core runtime assumes Claude Code, Git, and Python 3. The FULL workflow refer
 4. Run strict validation for the marketplace and every affected plugin, plus project tests.
 5. Open a pull request and obtain the repository's required review/CI evidence.
 6. After merge, update the marketplace and installed plugin, then reload or restart before verification.
+
+The workflow plugin is project-scoped in verified Everville repositories. The maintainer-only meta plugin is local to this marketplace repository. The explicit handoff plugin may remain user-scoped. The audited inventory and exclusions are recorded in [deployment scope](deployment-scope.md).

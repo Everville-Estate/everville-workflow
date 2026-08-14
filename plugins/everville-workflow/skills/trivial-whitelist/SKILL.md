@@ -5,7 +5,7 @@ description: Use before any Everville repository change to route it deterministi
 
 # Trivial Whitelist — Track Router
 
-Consult this skill before changing an Everville repository. Return exactly one verdict and cite the matching rule:
+Consult this skill before changing an Everville repository. This skill is the single authoritative source for BYPASS/LIGHT/FULL classification; downstream workflow skills consume its verdict and must not repeat these trigger rules. Return exactly one verdict and cite the matching rule:
 
 - **BYPASS** — direct edit plus proportionate verification; do not invoke unified-workflow.
 - **LIGHT** — invoke unified-workflow and use its four-phase track.
@@ -51,6 +51,7 @@ Return **LIGHT** for everything else non-trivial, including:
 - Mixed formatting plus any behavior line.
 
 If LIGHT work later exposes a FULL trigger, upgrade in place under unified-workflow.
+Rerun this router to record that upgraded verdict; unified-workflow does not reclassify it independently.
 
 ## Examples
 

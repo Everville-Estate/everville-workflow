@@ -41,6 +41,13 @@ class RepositoryInvariantTests(unittest.TestCase):
     def test_spec_hardening_policy(self) -> None:
         VALIDATOR.validate_spec_hardening()
 
+    def test_retired_runtime_surfaces_stay_removed(self) -> None:
+        VALIDATOR.validate_components()
+        self.assertFalse((ROOT / "scripts" / "orchestration").exists())
+        self.assertFalse(
+            (ROOT / "plugins" / "everville-workflow" / "commands").exists()
+        )
+
 
 class WorkflowPinTests(unittest.TestCase):
     def test_rejects_floating_step_action(self) -> None:

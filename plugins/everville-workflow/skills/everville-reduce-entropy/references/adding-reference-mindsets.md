@@ -4,7 +4,7 @@ Reference mindsets are philosophical foundations for simplicity. They explain *w
 
 ## Where They Live
 
-Mindsets live in @reference/. Each is a standalone file named by concept.
+Mindsets live in `references/`. Each is a standalone file named by concept.
 
 ## File Structure
 

@@ -10,8 +10,8 @@
     {
       "name": "everville-workflow",
       "source": "./plugins/everville-workflow",
-      "description": "Repository-scoped BYPASS/LIGHT/FULL development workflow with proportional specification hardening, advisory hooks, entropy/lesson/production/CI skills, two focused agents, and a read-only PR-summary command",
-      "version": "0.13.0",
+      "description": "Repository-scoped BYPASS/LIGHT/FULL development workflow with proportional specification hardening, verified SessionStart context, focused execution and review skills, and two agents",
+      "version": "0.14.0",
       "author": {
         "name": "Everville Estate PTE LTD"
       }
@@ -20,7 +20,7 @@
       "name": "everville-meta",
       "source": "./plugins/everville-meta",
       "description": "Maintainer tooling for plugin authoring, instruction refactoring, skill judging/stocktaking, and bounded runtime skill-invocation diagnostics",
-      "version": "0.3.0",
+      "version": "0.4.0",
       "author": {
         "name": "Everville Estate PTE LTD"
       }

@@ -1,6 +1,6 @@
 {
   "name": "everville-meta",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Maintainer tooling for the everville-workflow marketplace: author plugins, refactor instruction files, judge and stocktake skills, and run bounded candidate-skill invocation diagnostics.",
   "author": {
     "name": "Everville Estate PTE LTD",

@@ -27,7 +27,7 @@ jobs:
         with:
           node-version: "22"
       - name: Install pinned Claude Code validator
-        run: npm install --global @anthropic-ai/claude-code@2.1.195
+        run: npm install --global @anthropic-ai/claude-code@2.1.232
       - name: Unit tests
         run: python3 -m unittest discover -s tests -p 'test_*.py'
       - name: Repository invariants

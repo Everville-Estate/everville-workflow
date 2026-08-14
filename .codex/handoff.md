@@ -1,27 +1,17 @@
-# Current State
+# Current state
 
-Stage `2026-07-10-spec-hardening` is implementation-complete and published as stacked draft PR `#17` from branch `feat/spec-hardening-0.13.0`, based on PR `#16` head `58bcf0c53d7d4b449919c213c742631b70a30eb5`. The source archive has unknown authorship and license, so no source text or attribution was incorporated. A single independently written `everville-spec-hardening` capability now provides proportional REVIEW/HARDEN/DELIVER handling for existing multi-component or high-risk specifications.
+Everville Workflow 0.14.0 and Meta 0.4.0 are being prepared on `feat/workflow-cleanup-0.14.0` from `origin/main` at `18ec08b0bd152740368d4d33b0ee40089679479e`.
 
-The candidate includes three conditionally loaded references, exact authority and verdict contracts, clean-room fingerprint exclusions, repository-level policy validation, four no-spend compliance scenarios, isolated cached-package checks, workflow 0.13.0 manifests/docs/changelogs, and CI coverage. Fresh agents passed a high-risk payment review and a bounded adjacent non-trigger. Independent paper review scored 121/130 (A), Everville Fit 10/10; both should-fix findings were corrected.
+The upgrade removes the unused local stage-orchestration subsystem and the per-tool mutation hook, keeps one live repository-scoped SessionStart identity check, centralizes BYPASS/LIGHT/FULL routing, requires isolated worktrees or sequential writers instead of a fragile shared-lock protocol, replaces production-readiness scores with deterministic local-evidence verdicts, distinguishes compliance failure modes by exit status, moves PR explanation to an explicit-only skill, and trims generic lesson material.
 
-Current local gates: 54 tests pass; repository validation passes six groups; skill-creator quick validation passes; skill security audit reports PASS with zero findings; Claude Code 2.1.195 strict marketplace and all-plugin validation passes; the isolated marketplace install contains workflow 0.13.0 plus unchanged meta 0.3.0 and handoff 0.4.0; process verification and diff hygiene pass. No paid `claude -p` compliance run was performed.
+A 2026-08-14 workstation audit found that `everville-workflow` was active in zero repositories: its only recorded installation was disabled at user scope. `everville-meta` was also disabled at user scope. `everville-handoff` alone was enabled globally. The intended post-release boundary is workflow at project scope in 22 verified canonical Everville repositories, meta local to this maintainer repository, and explicit-only handoff at user scope. Nine stale duplicate clones, thirteen non-Everville repositories, and six identity-ambiguous adjacent repositories are excluded pending separate reconciliation. See `docs/deployment-scope.md`.
 
-PR `#16` is ready for independent human review and reviewer `@pakvovan` was requested. It remains unmerged. Draft PR `#17` targets `fix/workflow-remediation-0.12.0` and depends on #16. Both PRs must remain unmerged and unreleased without separate authorization.
+## Resume point
 
-## Next recommended
+The final source candidate passes 53 unit tests, repository validation, strict marketplace/all-plugin validation, isolated three-plugin installation, Python compilation, compliance dry-run, diff hygiene, live canonical and formerly aliased `private-coach` SessionStart checks, and strict security scans for all 14 skills. A live Sonnet probe loaded the candidate plugin and completed a routing scenario. Independent exact-diff review has no remaining findings.
 
-Use the check and review state on draft PR `#17` as the remote source of truth for its final head. After PR `#16` merges, retarget #17 to `main`, rerun required checks, request human review, and merge/release only with separate authorization.
+Commit, push, and open the protected pull request. Do not persistently install the feature checkout or enable the old 0.13.0 release. After the pull request is approved and merged, update the marketplace and roll 0.14.0 out only to the verified project-scope targets, then verify the installed cache and actual hook surface.
 
-Next stage id: `2026-07-10-spec-hardening-review-and-pr`
+## External gate
 
-Recommended action: obtain the required human approval and merge authorization for PR `#16`; after it merges, retarget draft PR `#17` to `main`, confirm remote CI and human review on its then-current head, and request separate merge/release authorization.
-
-## Starter prompt for next orchestrator
-
-Use $orchestrator-stage to finish `2026-07-10-spec-hardening-review-and-pr`. Read `AGENTS.md`, `.codex/orchestrator.toml`, this handoff, PR `#16`, draft PR `#17`, and the complete `2026-07-10-spec-hardening` stage. Preserve the unknown-rights no-copy boundary, retarget #17 only after #16 merges, verify checks and review against the final head, and do not merge or release either PR without separate authorization.
-
-## Explicit defers
-
-- Original archive source, authorship, and license remain unknown; literal reuse requires a compatible license or written permission.
-- A paid 12-run compliance experiment has a printed maximum spend of $12.00 and requires separate user authorization; the current dry-run proves configuration and command construction only.
-- PR `#16` approval/merge/release and the new 0.13.0 PR merge/release remain outside this goal unless separately authorized.
+Repository protection requires an approving review and current-head CI. Do not bypass that protection or present an unmerged feature branch as a released installation.

@@ -1,137 +1,52 @@
 ---
 name: everville-lesson-learned
-description: "Analyze recent code changes via git history and extract software engineering lessons, optionally persisting them as feedback_*.md auto-memory entries. Use when the user asks 'what is the lesson here?', 'engineering takeaway', 'reflect on this code', or when a bug fix exposed a pattern worth propagating across Everville repos."
+description: Analyze a specific code change and extract one or two evidence-grounded, reusable engineering lessons. Use when asked for the lesson, engineering takeaway, or reflection on a bug fix or implementation. Persist globally only when the user explicitly requests it.
 ---
 
 <!--
-  Adapted from softaworks/agent-toolkit (lesson-learned) — MIT licensed.
+  Adapted from softaworks/agent-toolkit (lesson-learned), MIT licensed.
   See LICENSES/softaworks-MIT.txt for the original license text.
-  Everville modifications: renamed to everville-lesson-learned; Phase 4 extended
-  to optionally write lessons as feedback_*.md auto-memory entries so patterns
-  caught in one repo propagate across the Everville ecosystem.
+  Everville modifications: renamed and narrowed to evidence-grounded lessons;
+  global-memory writes require an explicit user request.
 -->
 
 # Everville Lesson Learned
 
-Extract specific, grounded software engineering lessons from actual code changes, then persist the most durable ones as auto-memory so the pattern is available in every future Everville repo. Not a lecture -- a mirror. Show the user what their code already demonstrates.
+Extract the most useful lesson demonstrated by an actual change. Do not force a lesson from trivial work or turn the response into a generic engineering lecture.
 
-## Before You Begin
+## Analyze
 
-**Load the principles reference first.**
+1. Determine the requested scope. If none is given, use the feature branch versus its base; on the base branch, use the last five commits.
+2. Read the commit messages and diff. For a diff over 500 lines, inspect its stat first, then the most relevant changed files. Do not expand into unchanged code unless it is necessary to understand the change.
+3. Identify the single dominant pattern. Use `references/se-principles.md` only as a compact naming aid; use `references/anti-patterns.md` when the change shows a concrete risk.
+4. Support every claim with a commit, file, or changed behavior. Report uncertainty when intent is not evidenced.
 
-1. Read `references/se-principles.md` to have the principle catalog available
-2. Optionally read `references/anti-patterns.md` if you suspect the changes include areas for improvement
-3. Determine the scope of analysis (see Phase 1)
-
-**Do not proceed until you've loaded at least `se-principles.md`.**
-
-## Phase 1: Determine Scope
-
-Ask the user or infer from context what to analyze.
-
-| Scope | Git Commands | When to Use |
-|-------|-------------|-------------|
-| Feature branch | `git log main..HEAD --oneline` + `git diff main...HEAD` | User is on a non-main branch (default) |
-| Last N commits | `git log --oneline -N` + `git diff HEAD~N..HEAD` | User specifies a range, or on main (default N=5) |
-| Specific commit | `git show <sha>` | User references a specific commit |
-| Working changes | `git diff` + `git diff --cached` | User says "what about these changes?" before committing |
-
-**Default behavior:**
-- If on a feature branch: analyze branch commits vs main
-- If on main: analyze the last 5 commits
-- If the user provides a different scope, use that
-
-## Phase 2: Gather Changes
-
-1. Run `git log` with the determined scope to get the commit list and messages
-2. Run `git diff` for the full diff of the scope
-3. If the diff is large (>500 lines), use `git diff --stat` first, then selectively read the top 3-5 most-changed files
-4. **Read commit messages carefully** -- they contain intent that raw diffs miss
-5. Only read changed files. Do not read the entire repo.
-
-## Phase 3: Analyze
-
-Identify the **dominant pattern** -- the single most instructive thing about these changes.
-
-Look for:
-- **Structural decisions** -- How was the code organized? Why those boundaries?
-- **Trade-offs made** -- What was gained vs. sacrificed? (readability vs. performance, DRY vs. clarity, speed vs. correctness)
-- **Problems solved** -- What was the before/after? What made the "after" better?
-- **Missed opportunities** -- Where could the code improve? (present gently as "next time, consider...")
-
-Map findings to specific principles from `references/se-principles.md`. Be specific -- quote actual code, reference actual file names and line changes.
-
-## Phase 4: Present the Lesson
-
-Use this template:
+## Output
 
 ```markdown
-## Lesson: [Principle Name]
+## Lesson: <specific principle or pattern>
 
-**What happened in the code:**
-[2-3 sentences describing the specific change, referencing files and commits]
-
-**The principle at work:**
-[1-2 sentences explaining the SE principle]
-
-**Why it matters:**
-[1-2 sentences on the practical consequence -- what would go wrong without this, or what goes right because of it]
-
-**Takeaway for next time:**
-[One concrete, actionable sentence the user can apply to future work]
+**Evidence:** <the concrete change, with files/commits>
+**Lesson:** <one or two sentences>
+**Why it matters:** <practical consequence>
+**Next time:** <one actionable rule>
 ```
 
-If there is a second lesson worth noting (maximum 2 additional):
+Add at most one secondary lesson. If the change is routine, say that no durable lesson is supported.
 
-```markdown
----
+## Global memory is explicit-only
 
-### Also worth noting: [Principle Name]
+Do not offer, suggest, or perform global persistence by default. Persist only when the user explicitly asks to save the lesson to global memory. Then:
 
-**In the code:** [1 sentence]
-**The principle:** [1 sentence]
-**Takeaway:** [1 sentence]
-```
+- follow the active host's memory-writing instructions and existing format; do not guess a path or create a parallel memory system;
+- save only a short portable rule plus the concrete repo/PR/commit provenance;
+- check for an existing equivalent entry and update it instead of duplicating it;
+- exclude repo-specific trivia and unverified interpretations.
 
-## Phase 5: Optional Persistence (Everville-specific)
+## Avoid
 
-Ask the user: **"Save this as auto-memory feedback so it applies across every Everville repo?"**
-
-If yes, locate the auto-memory root on this machine — it is the directory containing `MEMORY.md`: `ls ~/.claude/projects/*/memory/MEMORY.md`. The project slug in the path changes per machine/user; **never hardcode it**. Write the lesson to `<memory-root>/feedback_<slug>.md` using this frontmatter and update `MEMORY.md` with a one-line pointer:
-
-```markdown
----
-name: {{ short descriptive name }}
-description: {{ one-line description — used to decide relevance in future conversations }}
-type: feedback
----
-
-{{ the principle stated as a rule }}
-
-**Why:** {{ the concrete incident — cite the repo, PR, and commit SHA }}
-
-**How to apply:** {{ when/where this guidance kicks in across Everville repos }}
-```
-
-Only persist lessons that are **portable across repos**. A quirk of one balicopter view doesn't belong in global memory; a PostgREST / Next.js / Supabase gotcha does. Check the current `MEMORY.md` index for existing examples of the `feedback_*` shape (e.g. `feedback_postgrest_embed_ambiguous_fk.md`, `feedback_unstable_cache_cookies.md`) rather than inventing a new convention.
-
-Before writing, check if a matching memory already exists — update in place instead of creating duplicates.
-
-## What NOT to Do
-
-| Avoid | Why | Instead |
-|-------|-----|---------|
-| Listing every principle that vaguely applies | Overwhelming and generic | Pick the 1-2 most relevant |
-| Analyzing files that were not changed | Scope creep | Stick to the diff |
-| Ignoring commit messages | They contain intent that diffs miss | Read them as primary context |
-| Abstract advice disconnected from the code | Not actionable | Always reference specific files/lines |
-| Negative-only feedback | Demoralizing | Lead with what works, then suggest improvements |
-| More than 3 lessons | Dilutes the insight | One well-grounded lesson beats seven vague ones |
-
-## Conversation Style
-
-- **Reflective, not prescriptive.** Use the user's own code as primary evidence.
-- **Never say "you should have..."** -- instead use "the approach here shows..." or "next time you face this, consider..."
-- **If the code is good, say so.** Not every lesson is about what went wrong. Recognizing good patterns reinforces them.
-- **If the changes are trivial** (a single config tweak, a typo fix), say so honestly rather than forcing a lesson. "These changes are straightforward -- no deep lesson here, just good housekeeping."
-- **Be specific.** Generic advice is worthless. Every claim must point to a concrete code change.
+- catalogs of loosely related principles;
+- advice disconnected from the diff;
+- more than two lessons;
+- negative-only or motivational filler;
+- memory writes based on implied consent.

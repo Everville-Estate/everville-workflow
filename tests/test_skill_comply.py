@@ -335,5 +335,83 @@ class ReportingTests(unittest.TestCase):
         self.assertNotIn("Non-compliant runs", text)
 
 
+class ExitStatusTests(unittest.TestCase):
+    def run_main_with_classifications(self, classifications: list[str]) -> int:
+        with tempfile.TemporaryDirectory() as td:
+            root = pathlib.Path(td)
+            config_path = root / "scenarios.json"
+            config = valid_config()
+            config["runs"] = len(classifications)
+            config_path.write_text(json.dumps(config), encoding="utf-8")
+            plugin = root / "candidate"
+            (plugin / ".claude-plugin").mkdir(parents=True)
+            (plugin / ".claude-plugin" / "plugin.json").write_text("{}", encoding="utf-8")
+
+            verdicts = []
+            for classification in classifications:
+                conclusive = classification in {"compliant", "non_compliant"}
+                verdicts.append(
+                    {
+                        "classification": classification,
+                        "pass": classification == "compliant",
+                        "conclusive": conclusive,
+                        "missing": [],
+                        "leaked": [],
+                        "error": "measurement did not complete" if not conclusive else None,
+                    }
+                )
+            signals = {
+                "cost": 0.0,
+                "subtype": "success",
+                "result_is_error": False,
+                "api_error_status": None,
+                "result_error": "",
+                "exit": 0,
+                "stderr": "",
+                "skills": [],
+                "trace": None,
+            }
+            with (
+                mock.patch.object(skill_comply, "run_scenario", return_value=signals),
+                mock.patch.object(skill_comply, "classify_result", side_effect=verdicts),
+                contextlib.redirect_stdout(io.StringIO()),
+                contextlib.redirect_stderr(io.StringIO()),
+            ):
+                return skill_comply.main(
+                    [
+                        str(config_path),
+                        "--plugin-dir",
+                        str(plugin),
+                        "--workdir",
+                        str(root),
+                    ]
+                )
+
+    def test_inconclusive_measurement_has_distinct_nonzero_exit(self) -> None:
+        self.assertEqual(
+            self.run_main_with_classifications(["inconclusive"]),
+            skill_comply.EXIT_INCONCLUSIVE,
+        )
+
+    def test_inconclusive_required_run_is_not_masked_by_noncompliance(self) -> None:
+        self.assertEqual(
+            self.run_main_with_classifications(["non_compliant", "inconclusive"]),
+            skill_comply.EXIT_INCONCLUSIVE,
+        )
+
+    def test_conclusive_compliance_exits_zero(self) -> None:
+        self.assertEqual(self.run_main_with_classifications(["compliant"]), 0)
+
+    def test_infrastructure_and_noncompliance_keep_distinct_exits(self) -> None:
+        self.assertEqual(
+            self.run_main_with_classifications(["infrastructure_error"]),
+            skill_comply.EXIT_INFRASTRUCTURE_ERROR,
+        )
+        self.assertEqual(
+            self.run_main_with_classifications(["non_compliant"]),
+            skill_comply.EXIT_NON_COMPLIANT,
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1,27 +1,15 @@
 ---
 name: unified-workflow
-description: Use when starting a non-trivial feature, bug fix, refactor, migration, or runtime-affecting change in an Everville project. Route first through trivial-whitelist, then use either the LIGHT four-phase track for ordinary non-trivial work or the FULL 11-step track for critical or structural work. Covers planning, docs, isolation, implementation, preview/E2E, stable-SHA review, verification, production audit, PR integration, and closeout with explicit fallbacks when optional tools are unavailable.
+description: Execute the LIGHT four-phase or FULL 11-step track selected by trivial-whitelist for an Everville project. Covers planning, docs, isolation, implementation, preview/E2E, stable-SHA review, verification, production audit, PR integration, and closeout with explicit fallbacks when optional tools are unavailable.
 ---
 
 # Unified Workflow
 
-Use this skill at the start of non-trivial work in an Everville project. Invoke `trivial-whitelist` first; its verdict is one of:
+Use this skill after `trivial-whitelist` returns **LIGHT** or **FULL**. Its verdict is authoritative; do not independently reclassify the initial task here. A **BYPASS** verdict does not invoke this skill.
 
-- **BYPASS** — direct edit plus proportionate verification.
-- **LIGHT** — ordinary non-trivial work.
-- **FULL** — critical or structural work.
+Run the track named by that verdict. If scope materially changes, rerun `trivial-whitelist`; when its new verdict is FULL, upgrade at the current phase without restarting completed work. Proceed without ceremonial permission requests. Pause only for destructive/irreversible actions, a real scope change, missing authority, or information only the user can provide.
 
-Proceed without ceremonial permission requests. Pause only for destructive/irreversible actions, a real scope change, missing authority, or information only the user can provide.
-
-## Choose track and tier
-
-Use **FULL** when any condition holds:
-
-- Critical surface: aviation, financial, investor-facing, or another explicitly Tier-1 project/surface.
-- Structural or high-risk change: database schema/migration/RLS, auth/session, payments/webhooks, secrets/permissions, cross-cutting refactor, or irreversible data operation.
-- The user explicitly requests FULL.
-
-Use **LIGHT** for every other non-trivial change. Upgrade from LIGHT to FULL at the current phase if critical/structural scope appears; do not restart completed work.
+## Determine tier
 
 Tier affects review and release gates, not whether ordinary work receives any verification:
 
@@ -64,7 +52,7 @@ Create one Beads issue per milestone and link real dependencies. If Beads is una
 
 ### 5. ISOLATE
 
-Use a dedicated branch/worktree. Never modify a protected/upstream branch directly. Before introducing a wrapper, helper, module, or abstraction, invoke `everville-reduce-entropy` and compare against existing utilities. Parallel writers require disjoint worktrees; if they must share a resource, load and follow [`references/parallel-agent-locking.md`](references/parallel-agent-locking.md) in full.
+Use a dedicated branch/worktree. Never modify a protected/upstream branch directly. Before introducing a wrapper, helper, module, or abstraction, invoke `everville-reduce-entropy` and compare against existing utilities. Parallel writers require disjoint worktrees; if isolation is impossible, sequence the work.
 
 ### 6. IMPLEMENT
 

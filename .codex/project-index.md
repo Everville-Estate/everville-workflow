@@ -1,11 +1,11 @@
 # Project Index - Everville Workflow
 
-Stable navigation map. Current task state lives in `.codex/handoff.md`; stage history and delegated evidence live in `.codex/stages/`.
+Stable navigation map. Current resumable task state lives in `.codex/handoff.md`; Git and pull requests retain completed history.
 
 ## Runtime Shape
 
 - Public Claude Code plugin marketplace with three separately versioned plugins.
-- No application server or production data plane; runtime behavior executes inside Claude Code through skills, agents, commands, and hooks.
+- No application server or production data plane; runtime behavior executes inside Claude Code through skills, agents, and hooks.
 - Python is standard-library-only for shipped executable code.
 
 ## Primary Entrypoints
@@ -16,7 +16,6 @@ Stable navigation map. Current task state lives in `.codex/handoff.md`; stage hi
 - `plugins/everville-workflow/hooks/hooks.json` - automatic runtime events.
 - `scripts/validate_repository.py` - deterministic repository validation.
 - `scripts/validate_marketplace_install.sh` - isolated consumer installation and cached-package validation.
-- `.codex/orchestrator.toml` - orchestration and verification contract.
 
 ## Core Subsystems
 
@@ -46,12 +45,11 @@ Stable navigation map. Current task state lives in `.codex/handoff.md`; stage hi
 - `claude plugin validate plugins/everville-handoff --strict`
 - `scripts/validate_marketplace_install.sh`
 - `python3 plugins/everville-meta/skills/everville-skill-comply/scripts/skill_comply.py tests/fixtures/everville-spec-hardening.json --plugin-dir plugins/everville-workflow --workdir . --dry-run`
-- `scripts/orchestration/run_process_verification.sh`
 
 ## Conventions And Boundaries
 
 - Keep executable helpers dependency-free unless the dependency is declared, pinned, and justified.
 - Scope automatic behavior to verified Everville repositories.
-- Guidance may shape behavior; deterministic policy belongs in hooks, tests, CI, and repository protection.
-- Never call a speed bump a hard enforcement boundary unless all write paths are covered and tested.
-- Do not store stage history, blockers, or delivery logs in this index.
+- Guidance may shape behavior; deterministic policy belongs in tests, CI, permissions, and repository protection.
+- Never present SessionStart context or a skill description as an enforcement boundary.
+- Do not store task history, blockers, or delivery logs in this index.

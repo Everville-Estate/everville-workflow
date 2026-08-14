@@ -10,14 +10,14 @@ Claude Code plugin marketplace for the Everville Estate team. The repository shi
 
 - Marketplace inventory and versions: `.claude-plugin/marketplace.json`.
 - Plugin metadata: `plugins/*/.claude-plugin/plugin.json`.
-- Runtime behavior: each plugin's `skills/`, `agents/`, `commands/`, and `hooks/` directories.
+- Runtime behavior: each plugin's `skills/`, `agents/`, and `hooks/` directories.
 - Current operational state: `.codex/handoff.md`.
 - Stable repository navigation: `.codex/project-index.md`.
 - Historical architecture proposals belong under `docs/archive/`; do not treat them as current behavior.
 
 ## Canonical verification
 
-Run `scripts/validate_repository.py`, the strict marketplace/per-plugin validation commands, and `scripts/validate_marketplace_install.sh` as documented in `.codex/orchestrator.toml`. Hook and harness behavior must have deterministic tests; ad-hoc session evidence is not a substitute.
+Run the unit suite, `scripts/validate_repository.py`, strict marketplace/per-plugin validation, and `scripts/validate_marketplace_install.sh`. Hook and harness behavior must have deterministic tests; ad-hoc session evidence is not a substitute.
 
 ## Authoring rules
 
@@ -29,16 +29,13 @@ Run `scripts/validate_repository.py`, the strict marketplace/per-plugin validati
 - Skills with external side effects must make that boundary explicit and require deliberate invocation or authorization.
 - Preserve third-party attribution and license files.
 
-## Orchestration
+## Execution
 
-- Simple work stays local. Medium/complex work uses `orchestrator-stage` and `task-router`.
-- Create/select a Beads task before delegated or long-running file changes when Beads is available; otherwise record the missing tool and use the active Codex goal plus `.codex/handoff.md`.
-- Medium/complex work starts with a Parallel Decomposition Matrix.
-- Authorized delegated streams use separate spawned Codex agents and isolated worktrees; inline summaries are not a substitute.
-- Subagents inherit model/reasoning by default. Record the rationale for any override.
-- Every delegated prompt includes Documentation and Asset Routing blocks, a bounded write zone, success criteria, verification, and stop rules.
-- A subagent return is not acceptance. Review its diff and verification before integration.
-- No silent technical debt. Any defer must be bounded, tracked, and listed in `.codex/handoff.md`.
+- Keep simple work local. Use a concise plan for multi-stage changes.
+- Use bounded subagents only when independent parallel work materially helps; give writers separate worktrees or non-overlapping files.
+- A subagent return is evidence, not acceptance. Review its diff and verification before integration.
+- Keep `.codex/handoff.md` current when work must survive the session. Do not create parallel stage ledgers or orchestration artifacts.
+- No silent technical debt. Record a concrete owner and next action for every defer.
 
 ## Delivery boundaries
 
