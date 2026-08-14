@@ -1,6 +1,17 @@
 # everville-workflow changelog
 
-This file is release history for maintainers. It is not loaded as plugin instructions. Runtime behavior comes from the plugin's skills, commands, agents, and hooks.
+This file is release history for maintainers. It is not loaded as plugin instructions. Runtime behavior comes from the plugin's skills, agents, and hooks.
+
+## 0.14.0 - 2026-08-14
+
+- Remove the per-tool mutation gate and its forced retry; retain only a fast, factual SessionStart context check.
+- Verify canonical GitHub repository identity live on each start/resume without retaining stale identity state or evaluating SSH configuration.
+- Make `trivial-whitelist` the only BYPASS/LIGHT/FULL classifier and remove duplicate routing rules.
+- Replace numeric production-readiness scoring with deterministic local-evidence verdicts.
+- Move PR-summary guidance from a legacy command to an explicit-only skill.
+- Remove fragile shared-worktree locking guidance; require isolated worktrees or sequential writers.
+- Remove the unused repository-local stage orchestration subsystem and its duplicate state ledgers.
+- Reduce generic lesson/reference material while retaining source attribution and explicit persistence boundaries.
 
 ## 0.13.0 - 2026-07-10
 

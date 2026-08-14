@@ -1,74 +1,75 @@
 ---
 name: everville-production-audit
-description: Use before deploying an Everville app to production — a local-evidence ship/block readiness audit of the release surface (Supabase RLS, migration rollback, webhook/job idempotency, env fail-fast, authz boundaries), not diff correctness. Invoke at the verify→finish boundary of unified-workflow, when the user says "is this ready to ship / deploy / go live", or before any prod Vercel promotion of a tier-1 (balicopter/financial) or investor-facing surface. Emits a scored verdict with mandatory Evidence-checked / Evidence-missing sections.
+description: Use before an Everville deployment for a local-evidence release-readiness audit of RLS/authz, migration safety, idempotency, env validation, secrets, CI evidence, and critical-path coverage. Invoke at the verify-to-finish boundary of unified-workflow or when asked whether a release is ready to ship. This reports a deterministic local readiness verdict; it does not verify production or deploy.
 ---
 
-# Everville Production Audit
+# Everville Local Release-Readiness Audit
 
-A diff can be correct and the release still unsafe. Code review answers "is this change right?"; this answers "is the **release surface** ready?" — the things that only bite in production: a migration with no way back, a webhook that double-charges on retry, an env var that fails open, a new table with no RLS. This skill is the gate between VERIFY and FINISH.
+A correct diff can still make an unsafe release. Review establishes whether a change is correct; this audit checks the locally inspectable release surface before deployment. It cannot prove that production is healthy or that a deployment succeeded.
 
 ## Operating rules
 
-- **Local evidence only.** Read migrations, schema, route handlers, env schema, CI status, deploy config. Never run a remote scanner, never hit production, never deploy. The deliverable is a verdict, not an action.
-- **Name your evidence.** Every conclusion cites the file/command it came from. A check you couldn't run is "missing," not "passed." Unverifiable ≠ safe.
-- **Block on absence, not just on failure.** "No rollback path found" blocks the same as "rollback is broken." Silence about a release-surface concern is a finding.
+- **Local evidence only.** Read migrations, schema, route handlers, env schema, test results, CI status, and deploy configuration. Never hit production, run a remote scanner, or deploy.
+- **Name the evidence.** Cite every file and command used. A check that could not run is missing, never passed.
+- **Use the verdict rules exactly.** Do not invent points, weights, or a confidence score.
+- **Report only.** Do not fix, migrate, or deploy while using this skill.
 
-## The audit — gather evidence for each, on our stack
+## Checks
 
-| Surface | What to verify | Where to look |
+| Surface | Verify | Typical evidence |
 |---|---|---|
-| **RLS / authz** | Every new or altered table has RLS enabled + a policy; no policy sub-selects its own table (use SECURITY DEFINER); service-role key never reaches the client bundle | `supabase/migrations/*`, Drizzle schema, route handlers, `NEXT_PUBLIC_*` usage |
-| **Migration reversibility** | Forward migration is safe (no destructive `DROP`/`ALTER … NOT NULL` on populated columns without backfill) and has a stated rollback or is provably forward-only | `supabase/migrations/*`, the PR's migration diff |
-| **Idempotency** | Webhooks and background jobs dedupe on a key — a retry or double-delivery doesn't double-charge, double-insert, or double-send | webhook routes, edge functions, queue/cron handlers |
-| **Env fail-fast** | Required env vars are validated at boot and throw if missing — not silently `undefined`; `NEXT_PUBLIC_*` changes are paired with a fresh build, not just a redeploy | env schema/zod, `next.config`, build settings |
-| **Boundary validation** | User input and external API responses validated at the boundary; internal guarantees trusted. Watch the Everville footgun: a `next after()` callback runs as anon with no request auth, so RLS-gated writes inside it silently no-op | route handlers, server actions, `after()` calls |
-| **Secrets & logs** | No service-role key or secret reaching the client — including via a server action whose return value lands in a client component; nothing secret in committed `.env` or logs | the checks below, `.env*`, client components |
-| **CI & critical path** | CI is actually green (not "looks green"); the critical user path has a test or a written manual-test note | the checks below, test files, the spec |
+| **RLS / authz** | Every new or altered table has RLS and appropriate policy; policies do not recursively select their own table; service credentials cannot reach clients | `supabase/migrations/*`, schema, route handlers, `NEXT_PUBLIC_*` usage |
+| **Migration safety** | No destructive operation on populated data lacks a safe backfill/transition; rollback or an explicit forward-only recovery path exists | migration diff and release notes |
+| **Idempotency** | Webhooks and jobs deduplicate retries so they cannot double-charge, double-insert, or double-send | webhook, queue, cron, and edge-function handlers |
+| **Env fail-fast** | Required variables are validated at startup; public env changes require a fresh build | env schema, `next.config.*`, build configuration |
+| **Boundary validation** | User input and external responses are validated; detached `next after()` work does not assume request auth | routes, server actions, `after()` callbacks |
+| **Secrets and logs** | Secrets are absent from browser code, action return values, committed env files, and logs | source searches and client boundaries |
+| **CI and critical path** | CI is confirmed green for the current head; the critical path has automated or recorded manual-test evidence | `gh pr checks`, SHA evidence, tests, release notes |
 
-Two checks worth running rather than eyeballing — they make the evidence reproducible:
+Run reproducible checks where applicable:
 
 ```bash
-# Service-role key referenced anywhere that ships to the browser (must be empty)
 rg -n "SERVICE_ROLE|service_role" app components -g '!**/route.ts' -g '!**/*.server.ts'
-# Real CI state for this branch's PR (don't trust the green checkmark in the UI alone)
 gh pr checks --watch=false
 ```
 
-Tier-1 (balicopter aviation, anything financial/investor-facing) audits **all** rows. Tier-2 audits the rows the change touches. Skip nothing silently — if a row is N/A, say why.
+Tier 1 (aviation, financial, or investor-facing) evaluates every row. Tier 2 evaluates every row affected by the change. Mark an unaffected row `N/A` with a reason; never skip it silently.
 
-## Scoring — caps are the point
+## Deterministic verdict
 
-Start at 100, deduct for findings, then apply **hard caps** (a cap overrides the deducted score — you cannot buy back a structural gap with polish elsewhere):
+Apply these rules in order:
 
-- **Cap at 69 (BLOCK)** if any of: a new/altered table ships without RLS or authz; a webhook/job is non-idempotent; a migration is destructive with no rollback or backfill; a secret can reach the client or logs.
-- **Cap at 84 (SHIP WITH RISK)** if any of: CI is not confirmed green; the critical path has no test or manual-test evidence; required env vars aren't validated at boot.
-- **Bands:** 85–100 SHIP · 70–84 SHIP WITH RISK (named, owner-assigned) · ≤69 BLOCK.
+1. **BLOCK** if any applicable blocker is found or its required evidence is missing: RLS/authz on a changed table, idempotency for a changed webhook/job, safe migration/recovery for a destructive migration, or protection against secret exposure.
+2. **SHIP WITH RISK** if there is no blocker but any applicable risk remains or its evidence is missing: current-head CI, critical-path test/manual evidence, required-env fail-fast validation, boundary validation, or another unresolved release risk. Name an owner for every accepted risk.
+3. **SHIP** only when every applicable check is verified and no blocker or unresolved risk remains.
 
-The single most common false pass: **treating green CI as production readiness.** CI proves the code the tests cover works; it says nothing about rollback, idempotency, or authz. Audit those directly.
+These are hard verdict caps: one blocker caps the verdict at **BLOCK**; otherwise one unresolved risk caps it at **SHIP WITH RISK**. Findings cannot be offset by unrelated strengths.
+
+The most common false pass is treating green CI as release readiness. CI covers only tested behavior; inspect migration recovery, idempotency, authz, and secrets directly.
 
 ## Required output
 
-```
-## Production Audit — <app/PR>   Tier: <1|2>
-**Verdict: SHIP | SHIP WITH RISK | BLOCK**   Score: NN/100  (cap: <none|69|84> — <why>)
+```markdown
+## Local Release-Readiness Audit — <app/PR>   Tier: <1|2>
+**Verdict: SHIP | SHIP WITH RISK | BLOCK**
+**Scope:** local evidence only; production state not verified
 
 ### Evidence checked
-- <surface>: <what you read> → <finding + severity 🔴/🟠/🟡>
+- <surface>: <file or command> -> <finding and severity>
 
 ### Evidence missing
-- <surface>: could not verify <X> because <reason> — treated as a finding
+- <surface>: could not verify <X> because <reason> -> <verdict effect>
 
-### Required before ship  (only if BLOCK / SHIP WITH RISK)
-- 🔴 <blocker + the specific fix>
-- 🟠 <risk to accept explicitly, with an owner>
+### Required before ship
+- <blocker and specific fix, or risk, owner, and acceptance decision>
 ```
 
-Reuse the REVIEW step's severity labels (🔴 Blocker / 🟠 Should-fix / 🟡 Nice-to-have) so triage stays consistent across the workflow.
+Use `Blocker`, `Should-fix`, and `Nice-to-have` labels consistently with the workflow review step. Omit `Required before ship` only for `SHIP`.
 
 ## Anti-patterns
 
-- **"CI is green, ship it."** CI ≠ release readiness. See above.
-- **Scoring on polish.** A well-tested feature with no RLS on its table is a BLOCK, not an 80. Caps exist so cosmetics can't outvote structure.
-- **Passing what you couldn't check.** If you didn't find the rollback path, the verdict is "missing," not "fine."
-- **Auditing the diff instead of the surface.** That's the REVIEW step's job; this one inspects what production will actually run. If you trip over a diff-correctness bug here, hand it back to REVIEW rather than re-litigating it — don't double-own correctness.
-- **Acting on the finding.** This skill reports. It does not fix, migrate, or deploy — that's the user's call after reading the verdict.
+- Declaring production healthy from local evidence.
+- Passing a check that was not performed.
+- Auditing only the diff instead of the release surface.
+- Re-scoring a blocker because unrelated checks passed.
+- Fixing or deploying instead of returning the audit.

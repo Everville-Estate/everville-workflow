@@ -94,7 +94,7 @@ Marker kinds:
 - **LOW CONFIDENCE** means fewer than three conclusive samples support at least one measured level. One run is a hint, never a robust result.
 - A theater warning requires at least three conclusive supportive and competing runs and a gap of at least 50 percentage points.
 
-Exit status is `0` when no conclusive failure or infrastructure error exists, `1` for non-compliant runs, and `2` for configuration or infrastructure errors. JSON reports retain stderr and exit metadata. Raw trace files are always cleaned unless `--retain-traces` is explicit.
+Exit status is deterministic: `0` only when every required run is conclusive and compliant; `1` when all required runs are conclusive and at least one is non-compliant; `2` for any configuration or infrastructure error; and `3` when any required run is inconclusive. Precedence is `2`, then `3`, then `1`, then `0`, so incomplete evidence never masquerades as a conclusive result. JSON reports retain stderr and exit metadata. Raw trace files are always cleaned unless `--retain-traces` is explicit.
 
 ## Anti-patterns
 

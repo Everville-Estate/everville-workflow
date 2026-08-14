@@ -17,7 +17,7 @@ Ruthless YAGNI application can backfire when:
 - You can't add it retroactively at all (API versioning, mobile app kill switches)
 - The cost of not having it is catastrophic (security fundamentals, data you threw away)
 
-The avoiding-complexity skill pushes toward less. This mindset identifies the exceptions where "add it now" beats "add it later."
+The `everville-reduce-entropy` skill pushes toward less. This mindset identifies the exceptions where "add it now" beats "add it later."
 
 ## Common PAGNIs
 

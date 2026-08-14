@@ -17,7 +17,3 @@ node_modules/
 *.log
 __pycache__/
 *.pyc
-
-# Local orchestration transport/state
-.codex/completion-inbox/
-.worktree.lock

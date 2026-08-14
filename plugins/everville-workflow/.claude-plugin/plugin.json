@@ -1,7 +1,7 @@
 {
   "name": "everville-workflow",
-  "version": "0.13.0",
-  "description": "Repository-scoped BYPASS/LIGHT/FULL development workflow with proportional specification hardening, advisory SessionStart/PreToolUse hooks, entropy and lesson guidance, production/CI audits, two focused agents, and a read-only PR-summary command.",
+  "version": "0.14.0",
+  "description": "Repository-scoped BYPASS/LIGHT/FULL development workflow with proportional specification hardening, verified SessionStart context, focused execution and review skills, and two agents.",
   "author": {
     "name": "Everville Estate PTE LTD",
     "email": "niko.asta@everville.estate",

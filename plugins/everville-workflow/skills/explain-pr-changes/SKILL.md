@@ -1,4 +1,5 @@
 ---
+name: explain-pr-changes
 description: Generate review-ready PR title/body Markdown from the current branch diff without creating a branch, opening or editing a PR, pushing, or changing GitHub state.
 argument-hint: "[issue-number-to-close]"
 disable-model-invocation: true

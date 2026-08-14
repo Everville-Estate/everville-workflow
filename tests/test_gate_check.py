@@ -9,6 +9,7 @@ import unittest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 HOOK = REPO_ROOT / "plugins" / "everville-workflow" / "hooks" / "gate-check.py"
+HOOKS = REPO_ROOT / "plugins" / "everville-workflow" / "hooks" / "hooks.json"
 
 
 class GateCheckTests(unittest.TestCase):
@@ -40,235 +41,131 @@ class GateCheckTests(unittest.TestCase):
         self.git(path, "commit", "-qm", "initial")
         return path
 
-    def run_hook(self, payload, *, home=None, context=False):
+    def run_hook(self, cwd, *, env_extra=None):
         env = os.environ.copy()
-        env["HOME"] = str(home or self.home)
-        command = [sys.executable, str(HOOK)]
-        if context:
-            command.append("--context")
+        env["HOME"] = str(self.home)
+        env.update(env_extra or {})
         return subprocess.run(
-            command,
-            input=json.dumps(payload),
+            [sys.executable, str(HOOK)],
+            input=json.dumps(
+                {
+                    "hook_event_name": "SessionStart",
+                    "session_id": "session-1",
+                    "cwd": str(cwd),
+                }
+            ),
             capture_output=True,
             text=True,
             env=env,
         )
 
-    @staticmethod
-    def edit_payload(cwd, path, session="session-1"):
-        return {
-            "hook_event_name": "PreToolUse",
-            "tool_name": "Edit",
-            "session_id": session,
-            "cwd": str(cwd),
-            "tool_input": {"file_path": str(path)},
-        }
-
-    @staticmethod
-    def bash_payload(cwd, command, session="session-1"):
-        return {
-            "hook_event_name": "PreToolUse",
-            "tool_name": "Bash",
-            "session_id": session,
-            "cwd": str(cwd),
-            "tool_input": {"command": command},
-        }
-
-    def test_first_edit_is_denied_and_retry_is_allowed(self):
-        repo = self.make_repo(self.base / "repo")
-        payload = self.edit_payload(repo, repo / "tracked.txt")
-
-        first = self.run_hook(payload)
-        retry = self.run_hook(payload)
-
-        self.assertEqual(first.returncode, 2)
-        self.assertIn("one-time advisory", first.stderr)
-        self.assertIn("BYPASS, LIGHT, or FULL", first.stderr)
-        self.assertEqual(retry.returncode, 0)
-
-    def test_marker_creation_failure_is_fail_open(self):
-        repo = self.make_repo(self.base / "repo")
-        invalid_home = self.base / "not-a-directory"
-        invalid_home.write_text("file", encoding="utf-8")
-
-        result = self.run_hook(
-            self.edit_payload(repo, repo / "tracked.txt"), home=invalid_home
-        )
-
+    def assert_context(self, result):
         self.assertEqual(result.returncode, 0)
         self.assertEqual(result.stderr, "")
+        self.assertIn("<everville-workflow-context>", result.stdout)
+        self.assertIn("verified Everville-Estate GitHub repository", result.stdout)
+        self.assertIn("BYPASS, LIGHT, or FULL", result.stdout)
 
-    def test_nested_cwd_uses_git_root_for_sibling_file(self):
+    def test_hooks_register_only_session_start(self):
+        hooks = json.loads(HOOKS.read_text(encoding="utf-8"))["hooks"]
+
+        self.assertEqual(list(hooks), ["SessionStart"])
+
+    def test_verified_everville_repo_gets_short_factual_context(self):
         repo = self.make_repo(self.base / "repo")
-        nested = repo / "packages" / "app"
-        sibling = repo / "packages" / "shared" / "index.ts"
-        nested.mkdir(parents=True)
-        sibling.parent.mkdir(parents=True)
 
-        result = self.run_hook(self.edit_payload(nested, sibling))
+        result = self.run_hook(repo)
 
-        self.assertEqual(result.returncode, 2)
+        self.assert_context(result)
+        self.assertNotIn("PreToolUse", result.stdout)
+        self.assertNotIn("before ANY code change", result.stdout)
 
-    def test_linked_worktree_is_identified_from_its_own_root(self):
-        repo = self.make_repo(self.base / "source")
-        worktree = self.base / "linked"
-        self.git(repo, "worktree", "add", "-q", "-b", "linked-test", str(worktree))
-        nested = worktree / "packages" / "app"
-        target = worktree / "packages" / "shared" / "index.ts"
-        nested.mkdir(parents=True)
-        target.parent.mkdir(parents=True)
-
-        result = self.run_hook(self.edit_payload(nested, target))
-
-        self.assertEqual(result.returncode, 2)
-
-    def test_same_basename_repositories_do_not_share_marker(self):
-        first_repo = self.make_repo(self.base / "one" / "project")
-        second_repo = self.make_repo(self.base / "two" / "project")
-
-        first = self.run_hook(
-            self.edit_payload(first_repo, first_repo / "tracked.txt", "same-session")
+    def test_non_everville_and_non_repository_get_no_context(self):
+        external = self.make_repo(
+            self.base / "external", "https://github.com/example/example.git"
         )
-        second = self.run_hook(
-            self.edit_payload(second_repo, second_repo / "tracked.txt", "same-session")
-        )
+        not_repo = self.base / "not-repo"
+        not_repo.mkdir()
 
-        self.assertEqual(first.returncode, 2)
-        self.assertEqual(second.returncode, 2)
+        self.assertEqual(self.run_hook(external).stdout, "")
+        self.assertEqual(self.run_hook(not_repo).stdout, "")
 
-    def test_remote_identity_change_does_not_reuse_marker(self):
+    def test_remote_identity_is_live_not_session_cached(self):
         repo = self.make_repo(self.base / "repo")
-        payload = self.edit_payload(repo, repo / "tracked.txt", "same-session")
 
-        first = self.run_hook(payload)
+        first = self.run_hook(repo)
         self.git(
             repo,
             "remote",
             "set-url",
             "origin",
-            "git@github.com:Everville-Estate/renamed.git",
+            "https://github.com/example/example.git",
         )
-        renamed_remote = self.run_hook(payload)
+        changed = self.run_hook(repo)
 
-        self.assertEqual(first.returncode, 2)
-        self.assertEqual(renamed_remote.returncode, 2)
+        self.assert_context(first)
+        self.assertEqual(changed.stdout, "")
 
-    def test_lowercase_owner_is_recognized(self):
+    def test_nested_included_origin_change_is_seen_live(self):
+        repo = self.make_repo(self.base / "repo")
+        first_include = self.base / "first.inc"
+        everville = self.base / "everville.inc"
+        external = self.base / "external.inc"
+        everville.write_text(
+            '[remote "origin"]\n\turl = git@github.com:Everville-Estate/example.git\n',
+            encoding="utf-8",
+        )
+        external.write_text(
+            '[remote "origin"]\n\turl = https://github.com/example/example.git\n',
+            encoding="utf-8",
+        )
+        first_include.write_text(f"[include]\n\tpath = {everville}\n", encoding="utf-8")
+        self.git(repo, "config", "--unset-all", "remote.origin.url")
+        self.git(repo, "config", "include.path", str(first_include))
+
+        first = self.run_hook(repo)
+        first_include.write_text(f"[include]\n\tpath = {external}\n", encoding="utf-8")
+        changed = self.run_hook(repo)
+
+        self.assert_context(first)
+        self.assertEqual(changed.stdout, "")
+
+    def test_ssh_aliases_are_not_evaluated(self):
+        for remote in (
+            "git@github-work:Everville-Estate/example.git",
+            "ssh://git@github-work/Everville-Estate/example.git",
+        ):
+            with self.subTest(remote=remote):
+                repo = self.make_repo(self.base / str(len(remote)), remote)
+                result = self.run_hook(repo)
+                self.assertEqual(result.returncode, 0)
+                self.assertEqual(result.stdout, "")
+                self.assertEqual(result.stderr, "")
+
+    def test_canonical_looking_local_path_is_not_a_remote(self):
         repo = self.make_repo(
-            self.base / "repo", "https://github.com/everville-estate/example.git"
+            self.base / "repo", "github.com/everville-estate/example"
         )
 
-        result = self.run_hook(self.edit_payload(repo, repo / "tracked.txt"))
+        self.assertEqual(self.run_hook(repo).stdout, "")
 
-        self.assertEqual(result.returncode, 2)
+    def test_linked_worktree_uses_its_own_root(self):
+        repo = self.make_repo(self.base / "source")
+        worktree = self.base / "linked"
+        self.git(repo, "worktree", "add", "-q", "-b", "linked-test", str(worktree))
 
-    def test_similar_owner_or_non_github_host_is_not_recognized(self):
-        similar = self.make_repo(
-            self.base / "similar",
-            "https://github.com/not-everville-estate/example.git",
-        )
-        other_host = self.make_repo(
-            self.base / "other-host",
-            "https://gitlab.com/Everville-Estate/example.git",
-        )
+        result = self.run_hook(worktree)
 
-        self.assertEqual(
-            self.run_hook(self.edit_payload(similar, similar / "tracked.txt")).returncode,
-            0,
-        )
-        self.assertEqual(
-            self.run_hook(
-                self.edit_payload(other_host, other_host / "tracked.txt")
-            ).returncode,
-            0,
-        )
+        self.assert_context(result)
 
-    def test_exemptions_are_anchored_to_repo_relative_prefixes(self):
+    def test_missing_git_fails_open(self):
         repo = self.make_repo(self.base / "repo")
-        root_memory = repo / "memory" / "note.md"
-        production_memory = repo / "src" / "memory" / "store.ts"
-        root_memory.parent.mkdir()
-        production_memory.parent.mkdir(parents=True)
 
-        exempt = self.run_hook(self.edit_payload(repo, root_memory, "exempt"))
-        production = self.run_hook(
-            self.edit_payload(repo, production_memory, "production")
-        )
-
-        self.assertEqual(exempt.returncode, 0)
-        self.assertEqual(production.returncode, 2)
-
-    def test_file_outside_repository_is_not_gated(self):
-        repo = self.make_repo(self.base / "repo")
-        outside = self.base / "repo-other" / "file.ts"
-        outside.parent.mkdir()
-
-        result = self.run_hook(self.edit_payload(repo, outside))
+        result = self.run_hook(repo, env_extra={"PATH": str(self.base / "empty-bin")})
 
         self.assertEqual(result.returncode, 0)
-
-    def test_non_everville_repo_gets_no_gate_or_session_context(self):
-        repo = self.make_repo(
-            self.base / "repo", "https://github.com/example/example.git"
-        )
-        payload = self.edit_payload(repo, repo / "tracked.txt")
-
-        edit = self.run_hook(payload)
-        context = self.run_hook({"cwd": str(repo)}, context=True)
-
-        self.assertEqual(edit.returncode, 0)
-        self.assertEqual(context.returncode, 0)
-        self.assertEqual(context.stdout, "")
-
-    def test_session_context_is_emitted_only_for_everville_repo(self):
-        repo = self.make_repo(self.base / "repo")
-
-        result = self.run_hook({"cwd": str(repo)}, context=True)
-
-        self.assertEqual(result.returncode, 0)
-        self.assertIn("<everville-workflow-gate>", result.stdout)
-        self.assertIn("BYPASS", result.stdout)
-        self.assertIn("LIGHT", result.stdout)
-        self.assertIn("FULL", result.stdout)
-
-    def test_common_mutating_bash_is_gated_but_read_only_bash_is_not(self):
-        repo = self.make_repo(self.base / "repo")
-
-        read_only = self.run_hook(
-            self.bash_payload(repo, "git status --short", "read-only")
-        )
-        mutation = self.run_hook(
-            self.bash_payload(repo, "sed -i.bak 's/a/b/' tracked.txt", "mutation")
-        )
-        retry = self.run_hook(
-            self.bash_payload(repo, "sed -i.bak 's/a/b/' tracked.txt", "mutation")
-        )
-
-        self.assertEqual(read_only.returncode, 0)
-        self.assertEqual(mutation.returncode, 2)
-        self.assertEqual(retry.returncode, 0)
-
-    def test_redirection_and_interpreter_bash_are_conservatively_gated(self):
-        repo = self.make_repo(self.base / "repo")
-
-        redirect = self.run_hook(
-            self.bash_payload(repo, "printf x > generated.txt", "redirect")
-        )
-        interpreter = self.run_hook(
-            self.bash_payload(repo, "python3 -c 'print(1)'", "interpreter")
-        )
-
-        self.assertEqual(redirect.returncode, 2)
-        self.assertEqual(interpreter.returncode, 2)
-
-    def test_multiline_mutating_bash_is_gated(self):
-        repo = self.make_repo(self.base / "repo")
-
-        result = self.run_hook(
-            self.bash_payload(repo, "git status --short\ntouch generated.txt", "multiline")
-        )
-
-        self.assertEqual(result.returncode, 2)
+        self.assertEqual(result.stdout, "")
+        self.assertEqual(result.stderr, "")
 
 
 if __name__ == "__main__":

@@ -27,6 +27,9 @@ DEFAULT_BUDGET = 1.50
 DEFAULT_RUNS = 3
 DEFAULT_TIMEOUT = 180
 MIN_CONFIDENT_RUNS = 3
+EXIT_NON_COMPLIANT = 1
+EXIT_INFRASTRUCTURE_ERROR = 2
+EXIT_INCONCLUSIVE = 3
 DEFAULT_PLUGIN_DIR = pathlib.Path(__file__).resolve().parents[3]
 
 
@@ -596,9 +599,11 @@ def main(argv: list[str] | None = None) -> int:
             encoding="utf-8",
         )
     if any(result["classification"] == "infrastructure_error" for result in results):
-        return 2
+        return EXIT_INFRASTRUCTURE_ERROR
+    if not results or any(not result["conclusive"] for result in results):
+        return EXIT_INCONCLUSIVE
     if any(result["classification"] == "non_compliant" for result in results):
-        return 1
+        return EXIT_NON_COMPLIANT
     return 0
 
 

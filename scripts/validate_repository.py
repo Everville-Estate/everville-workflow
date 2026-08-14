@@ -109,6 +109,14 @@ def validate_manifests() -> None:
 
 
 def validate_components() -> None:
+    removed_surfaces = (
+        ROOT / "scripts" / "orchestration",
+        ROOT / "plugins" / "everville-workflow" / "commands",
+    )
+    present = [display_path(path) for path in removed_surfaces if path.exists()]
+    if present:
+        fail("retired orchestration/command surfaces returned: " + ", ".join(present))
+
     for path in sorted(ROOT.glob("plugins/*/skills/*/SKILL.md")):
         fields = frontmatter(path, ("name", "description"))
         if not re.fullmatch(r"[a-z0-9-]{1,64}", fields["name"]):
@@ -134,7 +142,7 @@ def validate_components() -> None:
 
     explicit_only = (
         ROOT / "plugins/everville-workflow/skills/loop-on-ci/SKILL.md",
-        ROOT / "plugins/everville-workflow/commands/explain-pr-changes.md",
+        ROOT / "plugins/everville-workflow/skills/explain-pr-changes/SKILL.md",
     )
     for path in explicit_only:
         fields = frontmatter(path, ("description", "disable-model-invocation"))
