@@ -10,7 +10,7 @@ A 2026-08-14 workstation audit found that `everville-workflow` was active in zer
 
 The final source candidate passes 53 unit tests, repository validation, strict marketplace/all-plugin validation, isolated three-plugin installation, Python compilation, compliance dry-run, diff hygiene, live canonical and formerly aliased `private-coach` SessionStart checks, and strict security scans for all 14 skills. A live Sonnet probe loaded the candidate plugin and completed a routing scenario. Independent exact-diff review has no remaining findings.
 
-Commit, push, and open the protected pull request. Do not persistently install the feature checkout or enable the old 0.13.0 release. After the pull request is approved and merged, update the marketplace and roll 0.14.0 out only to the verified project-scope targets, then verify the installed cache and actual hook surface.
+Pull request `#18` (`feat/workflow-cleanup-0.14.0`) is open and its required `validate` check passed on the first published candidate. Review is requested from `pakvovan` and `dev-eva-mba`. Do not persistently install the feature checkout or enable the old 0.13.0 release. After the protected pull request receives an independent approval and is merged, update the marketplace and roll 0.14.0 out only to the verified project-scope targets, then verify the installed cache and actual hook surface.
 
 ## External gate
 
